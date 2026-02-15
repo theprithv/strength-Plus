@@ -1,0 +1,57 @@
+/* =============================================
+   ExerciseLibrary.css — Exercise library panel (sidebar / slide-out)
+   Order: layout → header → body
+   ============================================= */
+
+/* === Layout === */
+
+.exercise-library-panel {
+  width: 100%;
+  height: 100%;
+  background: #0f0f13;
+  border-left: 1px solid #1f1f24;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Header === */
+
+.exercise-library-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #1f1f24;
+  height: 40px;
+}
+
+.exercise-library-header h2 {
+  margin: 0;
+}
+
+.exercise-library-header button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  outline: none;
+}
+
+.exercise-library-header button:focus,
+.exercise-library-header button:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.exercise-library-header button::-moz-focus-inner {
+  border: 0;
+}
+
+/* === Body === */
+
+.exercise-library-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}

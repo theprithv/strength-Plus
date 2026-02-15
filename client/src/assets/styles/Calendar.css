@@ -1,0 +1,178 @@
+/* =============================================
+   Calendar.css — React Calendar (History / date picker)
+   Order: base → navigation → weekday → tiles → state → layout
+   ============================================= */
+
+/* === Base === */
+
+.react-calendar {
+  width: 100% !important;
+  border: none !important;
+  color: #e0e0e0;
+  font-family: "Figtree", sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 15px !important;
+  border-radius: 0 0 12px 12px;
+}
+
+.react-calendar * {
+  font-family: "Figtree", sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 15px !important;
+  background-color: #111216;
+}
+
+/* === Navigation === */
+
+.react-calendar__navigation {
+  margin-bottom: 0;
+  background-color: #111216;
+}
+
+.react-calendar__navigation__label {
+  background: none !important;
+  color: #e0e0e0 !important;
+  font-weight: 500 !important;
+  font-size: 15px !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  cursor: default !important;
+}
+
+.react-calendar__navigation button:not(.react-calendar__navigation__label) {
+  background: transparent !important;
+  color: #e0e0e0 !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  margin: 0 4px !important;
+  transition: background 0.15s ease;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.react-calendar__navigation__label:hover {
+  background: none !important;
+  color: #e0e0e0 !important;
+}
+
+/* === Weekday header === */
+
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  font-weight: 400 !important;
+  font-size: 15px !important;
+  color: #888;
+}
+
+.react-calendar__month-view__weekdays abbr {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  cursor: default !important;
+}
+
+/* === Date tiles === */
+
+.react-calendar__tile {
+  padding: 8px 6px;
+  background: none;
+  text-align: center;
+  line-height: 16px;
+  color: #d0d0d0;
+}
+
+.react-calendar__tile--active {
+  background: none !important;
+  color: #38bdf8 !important;
+  font-weight: 600;
+}
+
+.react-calendar__tile--now {
+  background: none !important;
+  border: none !important;
+  color: #008cff !important;
+  font-weight: 600;
+}
+
+.has-workout {
+  background: none !important;
+  border: none !important;
+  color: #477daa !important;
+  font-weight: 500;
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: #999;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: #444 !important;
+  opacity: 0.5;
+}
+
+/* === State: hover, focus === */
+
+.react-calendar__tile:hover {
+  background: #181818 !important;
+  border-radius: 6px;
+}
+
+.react-calendar__navigation button:not(.react-calendar__navigation__label):hover {
+  background: #1f1f24 !important;
+  color: white !important;
+}
+
+.react-calendar__navigation button:not(.react-calendar__navigation__label):focus,
+.react-calendar__navigation button:not(.react-calendar__navigation__label):active {
+  box-shadow: none !important;
+  background: #1f1f24 !important;
+}
+
+/* === Layout (flex / grid) === */
+
+.calendar-box > .calendar-body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+.calendar-box > .calendar-body > .react-calendar {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.calendar-box > .calendar-body > .react-calendar > .react-calendar__viewContainer {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+.react-calendar__month-view {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+.react-calendar__month-view__days {
+  flex: 1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  grid-template-rows: repeat(6, 1fr) !important;
+  height: 100% !important;
+}

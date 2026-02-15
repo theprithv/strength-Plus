@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String?
+  name      String
+  googleId  String?  @unique
+  createdAt DateTime @default(now())
+
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+
+  profile       Profile?
+  workouts      Workout[]
+  routines      Routine[]
+  highlightNote HighlightNote?
+  weeklyTodos   WeeklyTodo[]
+  prSlots       UserPRSlot[]
+}
+
+model Profile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name     String
+  imageUrl String?
+  bio      String?
+
+  goal   String
+  age    Int
+  height Float
+  weight Float
+
+  squatMax    Float?
+  benchMax    Float?
+  deadliftMax Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Exercise {
+  id            String @id @default(uuid())
+  name          String
+  primaryMuscle String
+  equipment     String
+
+  secondaryMuscles String[] @default([])
+
+  imageUrl        String?
+  howToSteps      String[] @default([])
+  isCustom        Boolean @default(false)
+  createdByUserId String?
+  
+  isDeprecated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  workoutLinks WorkoutExercise[]
+  routineLinks RoutineExercise[]
+  prSlots      UserPRSlot[]
+
+  @@unique([name, createdByUserId])
+}
+
+model Workout {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date DateTime @default(now())
+
+  startTime DateTime?
+  endTime   DateTime?
+  duration  Int?
+
+  splitName String
+
+  totalVolume Float @default(0)
+  totalSets   Int   @default(0)
+  totalReps   Int   @default(0)
+
+  isCompleted Boolean @default(false)
+
+  notes String?
+
+  exercises WorkoutExercise[]
+
+  createdAt DateTime @default(now())
+}
+
+model WorkoutExercise {
+  id         String @id @default(uuid())
+  workoutId  String
+  exerciseId String
+  order      Int
+
+  workout  Workout  @relation(fields: [workoutId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  sets SetLog[]
+}
+
+model SetLog {
+  id                String @id @default(uuid())
+  workoutExerciseId String
+  setNumber         Int
+  reps              Int
+  weight            Float
+
+  volume    Float    @default(0) // 🔥 cached for fast analytics
+  createdAt DateTime @default(now())
+
+  workoutExercise WorkoutExercise @relation(fields: [workoutExerciseId], references: [id])
+}
+
+model Routine {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String
+  notes     String?
+  isCurrent Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  exercises RoutineExercise[]
+}
+
+model RoutineExercise {
+  id        String  @id @default(uuid())
+  routineId String
+  routine   Routine @relation(fields: [routineId], references: [id])
+
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+
+  order Int
+
+  sets RoutineSet[]
+}
+
+model RoutineSet {
+  id                String          @id @default(uuid())
+  routineExerciseId String
+  routineExercise   RoutineExercise @relation(fields: [routineExerciseId], references: [id])
+
+  targetReps   Int
+  targetWeight Float?
+}
+
+model UserDailyInsight {
+  userId    String   @id
+  date      String   // YYYY-MM-DD
+  insights  Json
+  updatedAt DateTime @updatedAt
+}
+
+model HighlightNote {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title String
+  text  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WeeklyTodo {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  text        String
+  date        DateTime
+  isCompleted Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model UserPRSlot {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  slotIndex  Int
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@unique([userId, slotIndex], name: "userId_slotIndex")
+}

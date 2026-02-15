@@ -1,0 +1,385 @@
+/* =============================================
+   Routines.css — Routines page layout, list, editor, inputs, buttons
+   Order: layout → left panel → center/editor → buttons/inputs → exercise list → state → scroll
+   ============================================= */
+
+/* === Layout === */
+
+.exercises-page {
+  height: 100%;
+}
+
+.routine-workspace {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: 100%;
+  gap: 16px;
+  padding: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.routine-editor {
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+  padding: 0 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  flex: 1;
+}
+
+/* === Left panel — routine list === */
+
+.routines-list {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+  padding: 0 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.routine-items {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 12px;
+  padding-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.routine-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #1f2937;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.no-routines {
+  padding: 16px;
+  text-align: center;
+  color: #888;
+}
+
+.no-routines p {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.routines-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #e5e7eb;
+  margin-bottom: 12px;
+  margin-top: 22px;
+}
+
+.routines-title::after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 10px;
+  background: linear-gradient(to right,
+      rgba(79, 156, 255, 0.35),
+      rgba(79, 156, 255, 0.15),
+      rgba(79, 156, 255, 0));
+}
+
+/* === Center panel — editor header & empty === */
+
+.routine-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 6px 0 6px;
+}
+
+.routine-editor h2 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #e5e7eb;
+  padding-left: 6px;
+  margin-bottom: 0;
+  width: 80%;
+}
+
+.routine-editor h2::after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 10px;
+  background: linear-gradient(to right,
+      rgba(79, 156, 255, 0.35),
+      rgba(79, 156, 255, 0.15),
+      rgba(79, 156, 255, 0));
+}
+
+.routine-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 15px;
+  text-align: center;
+}
+
+/* === Buttons & inputs === */
+
+.new-routine-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #111216;
+  border: 1px dashed #2a2f3b;
+  color: #9aa4b2;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.set-current-btn {
+  color: #9aa4b2;
+  padding: 0;
+  padding-right: 2px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #0f0f13;
+}
+
+.rename-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  width: 100%;
+}
+
+.rename-input::selection {
+  background: rgba(79, 156, 255, 0.3);
+}
+
+.rename-input:focus {
+  outline: none;
+}
+
+.create-split-zone {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.create-split-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0f1217, #0b0d11);
+  border: 1px solid #232833;
+  color: #e5e7eb;
+  font-size: 14px;
+  outline: none;
+  animation: splitSlideDown 0.25s ease forwards;
+}
+
+.create-split-input::placeholder {
+  color: #6b7280;
+}
+
+.create-split-input:focus {
+  border-color: #4f9cff;
+  box-shadow: 0 0 0 2px rgba(79, 156, 255, 0.25);
+  background: linear-gradient(180deg, #111827, #0c0f14);
+}
+
+@keyframes splitSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: #9ca3af;
+  transition: fill 0.2s ease;
+}
+
+/* === Routine exercise list === */
+
+.routine-exercise-list {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 16px;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.routine-exercise-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.routine-exercise-list {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.routine-exercise-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 14px;
+  padding: 14px 16px;
+  gap: 12px;
+  cursor: grab;
+  transition: all 0.2s ease;
+  border: 1px solid #1f2937;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.routine-exercise-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.drag-handle {
+  color: #777;
+  font-size: 18px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.routine-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.routine-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.routine-actions button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-exercise-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+/* === State: hover, active === */
+
+.routine-item:hover {
+  background: #22252e;
+}
+
+.routine-item:hover .routine-actions {
+  opacity: 1;
+}
+
+.routine-item.active {
+  background: #2a2d36;
+  color: #38bdf8;
+}
+
+.new-routine-btn:hover {
+  background: #141823;
+  border-color: #3b82f6;
+  color: #e5e7eb;
+}
+
+.set-current-btn.active {
+  color: #38bdf8;
+}
+
+.routine-exercise-card:hover {
+  background: linear-gradient(180deg, #1c1c22, #15151a);
+  transform: translateY(-2px);
+}
+
+.routine-exercise-card:hover .drag-handle {
+  opacity: 1;
+}
+
+.routine-exercise-card:hover .remove-exercise-btn {
+  opacity: 1;
+}
+
+.routine-exercise-card:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.routine-actions button:hover {
+  color: #fff;
+}
+
+.remove-exercise-btn:hover {
+  color: #4f9cff;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.icon-btn:hover svg {
+  fill: #e5e7eb;
+}
+
+.icon-btn.danger:hover svg {
+  fill: #3b82f6;
+}

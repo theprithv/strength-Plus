@@ -1,0 +1,1505 @@
+/* =============================================
+   dashboard.css — Dashboard UI
+   Order: base → layout → sections → shared → charts → components → state → responsive
+   ============================================= */
+
+/* === Global / base === */
+
+body {
+  background: #0b0b0b;
+  color: #e5e5e5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+    sans-serif;
+}
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* === Dashboard layout === */
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 1fr 345px;
+  gap: 22px;
+  padding: 24px 14px 12px 24px;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  background: #0b0b0b;
+}
+
+.dashboard-center {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-width: 0;
+  min-height: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dashboard-center::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-center::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 10px;
+}
+
+.dashboard-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  min-width: 340px;
+  min-height: 0;
+  border-left: 1px solid #1f2937;
+  padding: 0 0 20px 14px;
+  box-sizing: border-box;
+}
+
+.dashboard-right>* {
+  flex-shrink: 0;
+}
+
+/* === Section containers === */
+
+.section {
+  margin-bottom: 12px;
+}
+
+.section-divider {
+  height: 1px;
+  background: #1f2937;
+  margin-bottom: 16px;
+}
+
+.section-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboard-widget {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.widget-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+
+.chart-section {
+  border-bottom: 1px solid #1f2937;
+}
+
+.list-section {
+  padding-bottom: 16px;
+}
+
+.heatmap-card {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+}
+
+.heatmap-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center,
+      rgba(56, 189, 248, 0.06),
+      transparent 65%);
+  pointer-events: none;
+}
+
+.stats-card {
+  flex: 0 0 auto;
+  min-height: 120px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px 18px;
+}
+
+.placeholder {
+  height: 120px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.placeholder.tall {
+  flex: 1;
+  min-height: 0;
+  height: 320px;
+}
+
+.calendar-section {
+  padding: 12px;
+  background: #0b0b0b;
+  border-bottom: 1px solid #1f2937;
+  border-top: 1px solid #1f2937;
+}
+
+.calendar-heatmap-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.dashboard-right .placeholder {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.calendar-section .placeholder {
+  height: 260px;
+}
+
+/* === Range selector (Quick Stats, Muscle Balance, Muscle Activity) === */
+
+.dashboard-range-selector {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.heatmap-toggle {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.heatmap-toggle span {
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.heatmap-toggle .active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* === Charts & visual elements === */
+
+.training-load-chart {
+  width: 100%;
+  min-height: 300px;
+  flex-shrink: 0;
+}
+
+.training-load-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.chart-body {
+  flex: 1;
+  width: 100%;
+  min-height: 300px;
+  position: relative;
+}
+
+.chart-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-left: 7px;
+}
+
+.chart-toggle {
+  padding-left: 8px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.chart-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.chart-placeholder {
+  color: #6b7280;
+  font-size: 13px;
+  padding: 24px 0;
+}
+
+.chart-container {
+  width: 100%;
+  height: 300px;
+  min-height: 260px;
+  margin-top: 8px;
+  display: block;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chart-container svg {
+  overflow: visible !important;
+}
+
+.custom-chart-tooltip {
+  background: #111216;
+  border: 1px solid #1f2937;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip-label {
+  color: #9ca3af;
+  font-size: 11px;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tooltip-value {
+  color: #e5e7eb;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tooltip-value span {
+  color: #38bdf8;
+}
+
+.tooltip-change {
+  font-size: 12px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.tooltip-change.pos {
+  color: #2dd4bf;
+}
+
+.tooltip-change.neg {
+  color: #fb7185;
+}
+
+
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.decision-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: #000;
+  border: 1px solid #222;
+}
+
+.decision-card.train h4 {
+  color: #4ade80;
+  margin: 0 0 4px 0;
+}
+
+.decision-card.avoid h4 {
+  color: #f87171;
+  margin: 0 0 4px 0;
+}
+
+.decision-card p {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.muscle-balance-card {
+  background: #111;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+/* === Body heatmap === */
+
+.body-heatmap-container {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.body-heatmap-container svg {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.body-heatmap-container svg path {
+  pointer-events: auto !important;
+}
+
+/* === Year heatmap === */
+
+.year-heatmap-wrapper {
+  position: relative;
+  margin-top: 12px;
+}
+
+.year-heatmap {
+  display: flex;
+}
+
+.heatmap-week {
+  display: grid;
+  grid-template-rows: repeat(7, 11px);
+  gap: 3px;
+  margin-right: 3px;
+}
+
+.month-block {
+  display: flex;
+  margin-right: 10px;
+}
+
+.heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #1f2937;
+}
+
+.heatmap-cell.empty {
+  background: transparent;
+}
+
+.month-label-row {
+  position: relative;
+  height: 20px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.month-label {
+  position: absolute;
+  transform: none;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.heatmap-svg-premium {
+  width: 100%;
+  height: auto;
+  overflow: visible !important;
+}
+
+/* === Quick Stats === */
+
+.quickstats-root {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: center;
+  min-height: 96px;
+  transition: opacity 0.2s ease;
+}
+
+.qs-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qs-muscle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #e5e7eb;
+}
+
+.qs-divider {
+  width: 42px;
+  height: 2px;
+  background: #1f2937;
+}
+
+.qs-volume {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #ffffff;
+}
+
+.qs-sub {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.qs-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: right;
+  margin-top: 30px;
+  margin-right: 8px;
+}
+
+.qs-sr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  justify-items: end;
+}
+
+.qs-sr {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.qs-sr-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.qs-sr-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #9ca3af;
+}
+
+.qs-meta {
+  font-size: 12.5px;
+  color: #d1d5db;
+  line-height: 1.4;
+}
+
+.qs-meta.muted {
+  color: #9ca3af;
+}
+
+/* === Calendar header & year selector === */
+
+.calendar-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0;
+}
+
+.calendar-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.year-dropdown {
+  position: relative;
+}
+
+.year-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  background: #0b0b0b;
+  padding: 0 18px 0 0;
+  color: #a7acb7;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.chevron {
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid #9ca3af;
+  border-bottom: 2px solid #9ca3af;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.chevron.open {
+  transform: rotate(-135deg);
+}
+
+.year-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 110px;
+  padding: 6px;
+  background: #111;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  z-index: 50;
+}
+
+.year-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.check {
+  font-size: 12px;
+}
+
+.streak-summary {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  color: #9ca3af;
+  font-size: 14.2px;
+  font-weight: 500;
+}
+
+.streak-summary span {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.streak-summary strong {
+  color: #e5e7eb;
+  font-weight: 600;
+  font-size: 16px;
+  margin-left: 2px;
+}
+
+.calendar-header,
+.year-selector,
+.streak-summary {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* === Gemini / AI panel === */
+
+.gemini-greeting {
+  font-size: 23px;
+  font-weight: 600;
+  color: #38bdf8;
+  padding-left: 6px;
+}
+
+.gemini-username {
+  color: #e5e5e5;
+  font-weight: 600;
+}
+
+.gemini-placeholder {
+  font-size: 15px;
+  color: #9ca3af;
+}
+
+.gemini-text {
+  font-family: "Inter", sans-serif;
+  flex: 1;
+  white-space: pre-wrap;
+  font-size: 15px;
+  color: #9ca3af;
+  line-height: 1.6;
+  font-style: italic;
+  word-break: break-word;
+  /* Ensure long words break */
+  overflow-wrap: break-word;
+  /* Ensure wrapping */
+  min-width: 0;
+  /* Allow flex item to shrink */
+}
+
+.gemini-panel-premium {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  border-radius: 14px;
+  padding: 4px 14px 14px 14px;
+  position: relative;
+  /* overflow: hidden; <-- removing overflow hidden to prevent clipping if it grows */
+  min-height: 90px;
+  /* Was height: 90px */
+  height: auto;
+  /* Allow growth */
+  display: flex;
+  flex-direction: column;
+  /* justify-content: center;  <-- REMOVED to keep greeting at top */
+  justify-content: flex-start;
+  /* Ensure top alignment */
+}
+
+@media (max-width: 768px) {
+  .gemini-panel-premium {
+    height: auto;
+    min-height: 90px;
+    padding: 12px;
+  }
+}
+
+.gemini-panel-premium::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.gemini-content-grid {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  height: 100%;
+  /* Take full height of panel */
+}
+
+.gemini-avatar-area {
+  flex-shrink: 0;
+  padding-top: 12px;
+}
+
+.ai-orb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  transition: all 0.5s ease;
+}
+
+.gemini-text-area {
+  flex: 1;
+  min-width: 0;
+  /* CRITICAL: Allows flex child to shrink below content size */
+}
+
+@keyframes breathe {
+
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.4;
+    box-shadow: 0 0 5px #9ca3af;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 0 12px #38bdf8;
+  }
+}
+
+@keyframes flicker {
+
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.ai-orb.thinking {
+  background: #9ca3af;
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+.ai-orb.typing {
+  animation: flicker 0.15s infinite;
+  box-shadow: 0 0 15px #38bdf8;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.snapshot-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.snapshot-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.snapshot-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.delta {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.delta.pos {
+  color: #10b981;
+}
+
+.delta.neg {
+  color: #38bdf8;
+}
+
+/* === Muscle paths (body heatmap) === */
+
+.muscle-path {
+  fill: #1f3a5a;
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: fill 0.2s ease, filter 0.2s ease, stroke 0.2s ease;
+}
+
+svg path:not(.muscle-path) {
+  pointer-events: none;
+}
+
+.debug-path {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* === State: hover, active, disabled === */
+
+.muscle-hovered {
+  fill: #38bdf8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+}
+
+.muscle-reset {
+  filter: none;
+}
+
+.heatmap-cell.active {
+  background: #38bdf8;
+  opacity: 0.9;
+}
+
+.heatmap-rect {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.heatmap-rect:hover {
+  stroke: #ffffff;
+  stroke-width: 1px;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.6));
+}
+
+.heatmap-rect.active {
+  filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.3));
+}
+
+.year-option:hover {
+  background: #1f2937;
+}
+
+.year-option.active {
+  color: #38bdf8;
+}
+
+/* === Responsive: Desktop (default above) === */
+/* 1280px+ uses base styles: 2 columns, fixed right 345px */
+
+/* === Laptop: 1025–1279px === */
+@media (max-width: 1279px) and (min-width: 1025px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr 280px;
+    /* Reduced right column slightly */
+    padding: 20px 12px;
+    gap: 16px;
+  }
+
+  .dashboard-right {
+    min-width: 260px;
+  }
+
+  /* Force single column for QuickStats on narrow laptop sidebars */
+  /* .quickstats-root {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  } */
+
+  .qs-right {
+    margin-top: 0;
+    margin-right: 0;
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .qs-sr-grid {
+    justify-items: start;
+    gap: 24px;
+  }
+
+  .qs-sr {
+    align-items: flex-start;
+  }
+}
+
+.body-heatmap-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  max-height: 400px;
+  /* prevent infinite growth */
+  overflow: hidden;
+}
+
+.body-heatmap-container svg {
+  max-height: 100%;
+  width: auto !important;
+  /* Override inline style to respect height constraint */
+  height: auto !important;
+  max-width: 100%;
+}
+
+
+/* === Wrapper for logical responsive group < 1024px === */
+
+/* === Tablet: 641px – 1024px === */
+@media (max-width: 1024px) and (min-width: 641px) {
+  .dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: visible;
+    /* Let the page scroll naturally */
+    padding: 20px 24px 40px;
+    gap: 32px;
+  }
+
+  .dashboard-center {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    flex: none;
+    /* Do not shrink */
+  }
+
+  .dashboard-right {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid #1f2937;
+    padding: 24px 0 0;
+    /* Clear inherited left-padding */
+    display: grid;
+    /* grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); <-- Old: allowed side-by-side */
+    grid-template-columns: 1fr;
+    /* New: Force vertical stack (Heatmap on top, Stats below) */
+    gap: 20px;
+  }
+
+  .dashboard-right .heatmap-card {
+    min-height: 380px;
+    /* Give heatmap plenty of room */
+    grid-row: span 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .body-heatmap-container {
+    height: 340px;
+    /* Fixed height to constrain SVG */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    /* Safety clip */
+  }
+
+  .body-heatmap-svg {
+    height: 100% !important;
+    /* Force height to match container */
+    width: auto !important;
+    /* Allow width to shrink */
+    max-width: 100%;
+  }
+
+  .gemini-greeting {
+    font-size: 20px;
+  }
+}
+
+/* === Mobile: ≤640px === */
+@media (max-width: 640px) {
+  .dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: visible;
+    padding: 16px 12px 60px;
+    gap: 24px;
+  }
+
+  .dashboard-center {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    flex: none;
+  }
+
+  .dashboard-right {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid #1f2937;
+    padding: 20px 0 0;
+    /* Clear inherited left-padding */
+    display: flex;
+    /* Stack widgets vertically on mobile */
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .heatmap-card {
+    min-height: 300px;
+  }
+
+  .radar-card {
+    min-height: 320px;
+    padding: 14px 12px;
+  }
+
+  .radar-chart-container {
+    height: 280px;
+    min-height: 240px;
+  }
+
+  .chart-container,
+  .chart-body {
+    min-height: 240px;
+  }
+
+  .training-load-chart {
+    min-height: 240px;
+  }
+
+  .gemini-greeting {
+    font-size: 18px;
+    padding-left: 4px;
+  }
+
+  .gemini-panel-premium {
+    height: auto;
+    min-height: 80px;
+    padding: 12px;
+  }
+
+  .gemini-text {
+    font-size: 14px;
+  }
+
+  .section-header {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .calendar-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 0 4px;
+  }
+
+  .streak-summary {
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .year-trigger {
+    font-size: 14px;
+  }
+
+  .calendar-section {
+    margin-top: 10px;
+    margin-right: -10px;
+    /* Pull right to edge for scroll */
+    padding-right: 0;
+  }
+
+  .year-heatmap-wrapper {
+    margin-top: 8px;
+    margin-right: 0;
+    padding-right: 10px;
+    overflow-x: auto;
+    /* Ensure horizontal scroll */
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    /* Ensure block for scrolling */
+    width: 100%;
+  }
+
+  /* Force heatmap to retain size to be scrollable */
+  .heatmap-svg-premium {
+    min-width: 600px;
+    height: auto;
+    display: block;
+  }
+
+
+
+  /* Mobile specific heatmap fix */
+  .body-heatmap-container {
+    max-height: 300px;
+  }
+
+  .quickstats-root {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    min-height: auto;
+  }
+
+  .qs-right {
+    margin-top: 0;
+    margin-right: 0;
+    text-align: left;
+  }
+
+  .qs-sr-grid {
+    justify-items: start;
+  }
+
+  .qs-sr {
+    align-items: flex-start;
+  }
+
+  .snapshot-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .snapshot-card {
+    padding: 12px;
+  }
+
+  .snapshot-value {
+    font-size: 18px;
+  }
+
+  .radar-focus-card h4 {
+    font-size: 13px;
+  }
+
+  .radar-focus-desc,
+  .radar-focus-list {
+    font-size: 12px;
+  }
+}
+
+/* === Desktop: lock height and scroll center column (1101px+) === */
+@media (min-width: 1025px) {
+  .dashboard-layout {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .dashboard-center {
+    overflow-y: auto;
+  }
+}
+
+.radar-focus-card {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.radar-focus-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.radar-focus-card h4::before {
+  content: "⚡";
+  font-size: 16px;
+}
+
+.radar-focus-desc {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #d1d5db;
+  line-height: 1.4;
+}
+
+.radar-focus-list {
+  margin: 0;
+  font-size: 13px;
+  color: #f3f4f6;
+  font-weight: 500;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+/* Muscle Sets Bar Chart */
+.sets-chart-card {
+  min-height: auto !important;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+}
+
+.range-toggle-header {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.range-toggle-header span {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.range-toggle-header span.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.range-toggle-header .separator {
+  cursor: default;
+}
+
+/* Minimalist Tooltip Box */
+.muscle-sets-tooltip.minimal {
+  background: #0d0e12;
+  border: 1px solid #1f2937;
+  padding: 10px 14px;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  min-width: 170px;
+}
+
+.tooltip-title {
+  font-size: 15px;
+  font-weight: 400;
+  color: #fff;
+  margin: 0 0 8px 0;
+}
+
+.tooltip-stats {
+  margin-bottom: 6px;
+}
+
+.tooltip-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.tooltip-stat-row span {
+  color: #9ca3af;
+}
+
+.tooltip-stat-row strong {
+  color: #38bdf8;
+  font-weight: 400;
+}
+
+.tooltip-exercises {
+  border-top: 1px solid #1f2937;
+}
+
+.exercise-header {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.exercise-text-item {
+  font-size: 12px;
+  color: #d1d5db;
+  margin: 1px 0;
+  line-height: 1.4;
+  white-space: nowrap;
+  padding-bottom: 3px;
+}
+
+.recharts.surface {
+  border-top: 1px solid #1f2937;
+}
+
+.sets-chart-card .recharts-responsive-container {
+  padding-right: 25px !important;
+}
+
+/* Smooth transitions for the bar growth */
+.recharts-bar-rectangle {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recharts-text.recharts-label {
+  transition: opacity 0.3s ease;
+}
+
+.recharts-bar-rectangle:hover {
+  cursor: pointer;
+}
+
+
+/* Tooltip Interactive State Refinement */
+.muscle-sets-tooltip.minimal {
+  background: rgba(13, 14, 18, 0.98);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.overload-chart-card {
+  margin-top: 22px;
+  min-height: 380px;
+}
+
+/* Info Hint Styled for Strength+ Theme */
+.info-hint-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.info-hint-svg {
+  width: 16px;
+  height: 16px;
+  color: #38bdf8;
+  cursor: help;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.2));
+  padding-top: 4px;
+}
+
+.info-hint-wrapper:hover .info-hint-svg {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+  transform: scale(1.1);
+}
+
+.info-hint-content {
+  position: absolute;
+  top: calc(100% + 10px);
+  /* Position below the icon */
+  left: 0;
+  /* Align with the left edge of the icon */
+  width: 280px;
+  background: rgba(17, 18, 22, 0.98);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 14px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-10px);
+  /* Start slightly higher for slide-down effect */
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.info-hint-wrapper:hover .info-hint-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  /* Slide into place */
+}
+
+.info-hint-title {
+  color: #38bdf8;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 10px 0;
+}
+
+.info-hint-content {
+  width: 480px;
+  /* Increased width to accommodate two columns */
+}
+
+.info-hint-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Two equal columns */
+  gap: 12px;
+  /* Space between the left and right items */
+}
+
+.info-hint-content li {
+  color: #9ca3af;
+  font-size: 12px;
+  /* Slightly smaller to fit grid comfortably */
+  line-height: 1.4;
+  margin: 0;
+  position: relative;
+  padding-left: 14px;
+}
+
+.info-hint-content li::before {
+  content: "•";
+  color: #38bdf8;
+  position: absolute;
+  left: 0;
+}
+
+.info-hint-content li strong {
+  color: #e5e7eb;
+  font-weight: 550;
+}
+
+/* Replace .chart-select with this */
+.custom-dropdown-container {
+  position: relative;
+  width: 120px;
+  z-index: 100;
+}
+
+.custom-dropdown-trigger {
+  background: #ffffff05;
+  border: 1px solid #1f1f24;
+  border-radius: 8px;
+  padding: 4px 6px;
+  color: #fff;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.custom-dropdown-list {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  background: #0d0d10;
+  border: 1px solid #1f1f24;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 101;
+}
+
+.custom-dropdown-option {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.custom-dropdown-option:hover {
+  background: #1c1c22;
+}
+
+.custom-dropdown-option.active {
+  background: #1f2a44;
+  /* Blue active state from Exercises.css */
+  color: #38bdf8;
+}

@@ -1,0 +1,54 @@
+/* =============================================
+   App.css — Global Transitions & Skeletons
+   ============================================= */
+
+@keyframes fadeIn {
+   from {
+      opacity: 0;
+      transform: translateY(4px);
+   }
+
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
+}
+
+.page-fade-in {
+   animation: fadeIn 0.3s ease forwards;
+}
+
+/* Skeleton Loading Framework */
+.skeleton {
+   background: linear-gradient(90deg,
+         rgba(255, 255, 255, 0.03) 25%,
+         rgba(255, 255, 255, 0.08) 50%,
+         rgba(255, 255, 255, 0.03) 75%);
+   background-size: 200% 100%;
+   animation: skeletonPulse 1.5s infinite ease-in-out;
+   border-radius: 4px;
+}
+
+@keyframes skeletonPulse {
+   0% {
+      background-position: 200% 0;
+   }
+
+   100% {
+      background-position: -200% 0;
+   }
+}
+
+.skeleton-text {
+   height: 14px;
+   margin-bottom: 8px;
+}
+
+.skeleton-title {
+   height: 24px;
+   margin-bottom: 12px;
+}
+
+.skeleton-circle {
+   border-radius: 50%;
+}
