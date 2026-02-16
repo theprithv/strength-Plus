@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from "react";
 import "../assets/styles/History.css";
-
 import HistoryMainArea from "../components/history/HistoryMainArea";
 import HistoryRightPanel from "../components/history/HistoryRightPanel";
-import { getWorkoutsByDate } from "../services/historyApi";
+import { getWorkoutsByDate, getAllWorkouts } from "../services/historyApi";
 
 const History = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workouts, setWorkouts] = useState([]);
+  const [allWorkouts, setAllWorkouts] = useState([]); // For calendar dots
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Fetch full history ONLY ONCE on mount for calendar indicators
+  useEffect(() => {
+    getAllWorkouts()
+      .then(setAllWorkouts)
+      .catch(err => console.error("Failed to fetch calendar indicators:", err));
+  }, []);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -47,6 +54,7 @@ const History = () => {
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           workouts={workouts}
+          allWorkouts={allWorkouts}
         />
       </div>
     </div>

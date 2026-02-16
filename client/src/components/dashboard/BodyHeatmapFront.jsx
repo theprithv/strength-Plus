@@ -6,7 +6,7 @@ export default function BodyHeatmapFront({ onClick, onMouseEnter, onMouseLeave }
       <svg
         viewBox="0 0 617 940"
         preserveAspectRatio="xMidYMid meet"
-        style={{ width: "83%", height: "83%" }}
+        style={{ width: "100%", height: "100%" }}
         onClick={onClick}
       >
          <g clipPath="url(#clip0_0_1)" style={{ pointerEvents: "auto" }}>

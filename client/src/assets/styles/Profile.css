@@ -26,8 +26,8 @@
 
 /* === Strength+ Premium Glass Panels === */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.02); 
-  border: 1px solid #1f2937; 
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
   border-radius: 12px;
   padding: 16px;
   position: relative;
@@ -210,33 +210,6 @@
   color: #9ca3af;
 }
 
-/* === Responsive States === */
-@media (max-width: 1024px) {
-  .profile-container {
-    grid-template-columns: 1fr;
-    height: auto;
-    overflow: visible;
-  }
-
-  .profile-right-panel {
-    border-left: none;
-    border-top: 1px solid #1f2937;
-    padding-left: 0;
-    height: auto;
-  }
-
-  .pr-grid-three {
-    grid-template-columns: 1fr;
-    /* Stack on mobile */
-    gap: 8px;
-    background: transparent;
-  }
-
-  .pr-slot {
-    border: 1px solid #1f2937;
-    border-radius: 8px;
-  }
-}
 
 /* Workout Duration Graph Styles */
 .duration-section {
@@ -1137,4 +1110,36 @@ bar-hover-label {
   color: #38bdf8;
   margin-top: 4px;
   padding-left: 4px;
+}
+
+/* === Responsive States (Moved to end for priority) === */
+@media (max-width: 1024px) {
+  .profile-container {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: auto !important;
+    overflow: visible;
+    padding-bottom: 20px !important;
+  }
+
+  .profile-right-panel {
+    border-top: 1px solid #1f2937;
+    padding: 24px 16px !important;
+    height: auto !important;
+    position: relative !important;
+    max-height: none !important;
+    top: auto !important;
+    width: 100% !important;
+  }
+
+  .pr-grid-three {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    background: transparent;
+  }
+
+  .pr-slot {
+    border: 1px solid #1f2937;
+    border-radius: 8px;
+  }
 }

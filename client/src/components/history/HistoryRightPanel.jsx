@@ -2,14 +2,14 @@ import React from "react";
 import CalendarPanel from "./CalendarPanel";
 import DaySummaryPanel from "./DaySummaryPanel";
 
-const HistoryRightPanel = ({ selectedDate, setSelectedDate, workouts }) => {
+const HistoryRightPanel = ({ selectedDate, setSelectedDate, workouts, allWorkouts }) => {
   return (
     <div className="history-right-wrapper">
       <div className="history-calendar-container">
         <CalendarPanel
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
-          workouts={workouts}
+          workouts={allWorkouts || []}
         />
       </div>
 

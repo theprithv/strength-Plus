@@ -1,0 +1,122 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+}
+
+.modern-modal {
+    background: #0b0b0d;
+    border: 1px solid #1f2937;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-content {
+    padding: 32px 32px 24px 32px;
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 12px 0;
+}
+
+.modal-message {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.modal-footer {
+    padding: 0 32px 32px 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.modal-btn {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-btn.cancel {
+    background: rgba(255, 255, 255, 0.03);
+    color: #9ca3af;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-btn.cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.modal-btn.confirm.danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.modal-btn.confirm.danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+}
+
+.modal-btn.confirm.primary {
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.modal-btn.confirm.primary:hover {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.4);
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

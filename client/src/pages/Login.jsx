@@ -4,6 +4,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import api from "../services/api";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/images/new.png";
+import VerificationModal from "../components/VerificationModal";
 import "../assets/styles/Login.css";
 
 const Login = () => {
@@ -24,6 +25,8 @@ const Login = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0,
     label: "",
@@ -116,21 +119,24 @@ const Login = () => {
         const name = [form.firstName.trim(), form.lastName.trim()]
           .filter(Boolean)
           .join(" ");
-        const res = await api.post("/auth/register", {
+        await api.post("/auth/register", {
           email: form.email.trim(),
           password: form.password,
           name,
         });
-        login(res.data.user, res.data.token, form.rememberMe);
+
+        // Show verification modal instead of logging in
+        setUnverifiedEmail(form.email.trim());
+        setShowVerification(true);
       } else {
         const res = await api.post("/auth/login", {
           email: form.email.trim(),
           password: form.password,
         });
         login(res.data.user, res.data.token, form.rememberMe);
+        const from = location.state?.from?.pathname || "/dashboard";
+        navigate(from, { replace: true });
       }
-      const from = location.state?.from?.pathname || "/dashboard";
-      navigate(from, { replace: true });
     } catch (err) {
       const msg = err.response?.data?.errors
         ? err.response.data.errors[0].msg
@@ -139,6 +145,13 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerificationSuccess = (authData) => {
+    setShowVerification(false);
+    login(authData.user, authData.token, form.rememberMe);
+    const from = location.state?.from?.pathname || "/dashboard";
+    navigate(from, { replace: true });
   };
 
   const handleGoogleLogin = useGoogleLogin({
@@ -624,6 +637,13 @@ const Login = () => {
         </div>
       </div>
       <VisualSection />
+      {showVerification && (
+        <VerificationModal
+          email={unverifiedEmail || form.email}
+          onVerified={handleVerificationSuccess}
+          onCancel={() => setShowVerification(false)}
+        />
+      )}
     </div>
   );
 };

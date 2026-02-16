@@ -413,3 +413,22 @@ export const deleteSet = async (req, res) => {
     res.status(500).json({ error: "Failed to delete set" });
   }
 };
+
+export const getAllWorkouts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const workouts = await prisma.workout.findMany({
+      where: {
+        userId,
+        isCompleted: true,
+      },
+      select: {
+        startTime: true,
+      },
+    });
+    res.json(workouts);
+  } catch (err) {
+    console.error("Get all workouts failed:", err);
+    res.status(500).json({ error: "Failed to fetch workout history" });
+  }
+};

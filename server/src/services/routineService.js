@@ -59,7 +59,7 @@ export async function deleteRoutine(userId, routineId) {
 }
 
 
-export async function addExerciseToRoutine(userId, routineId, exerciseId) {
+export async function addExerciseToRoutine(userId, routineId, exerciseId, day = 1) {
   const routine = await prisma.routine.findFirst({
     where: { id: routineId, userId }
   });
@@ -69,13 +69,14 @@ export async function addExerciseToRoutine(userId, routineId, exerciseId) {
   }
 
   const count = await prisma.routineExercise.count({
-    where: { routineId }
+    where: { routineId, day }
   });
 
   return prisma.routineExercise.create({
     data: {
       routineId,
       exerciseId,
+      day,
       order: count + 1
     }
   });

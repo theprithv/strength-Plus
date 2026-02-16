@@ -8,6 +8,7 @@ import ExerciseLibraryContent from "../components/exercises/ExerciseLibraryConte
 export default function Routines() {
   const [routines, setRoutines] = useState([]);
   const [activeRoutine, setActiveRoutine] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(1);
   const [routineExercises, setRoutineExercises] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const [loadingExercises, setLoadingExercises] = useState(false);
@@ -38,6 +39,12 @@ export default function Routines() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [editingId]);
 
+  useEffect(() => {
+    if (activeRoutine) {
+      loadRoutineExercises(activeRoutine.id, selectedDay);
+    }
+  }, [activeRoutine?.id, selectedDay]);
+
   async function loadRoutines() {
     setRoutinesError(null);
     try {
@@ -46,7 +53,7 @@ export default function Routines() {
       const current = (res.data || []).find((r) => r.isCurrent) || res.data?.[0];
       if (current) {
         setActiveRoutine(current);
-        loadRoutineExercises(current.id);
+        setSelectedDay(current.currentDay || 1);
       }
     } catch (err) {
       console.error("Failed to load routines", err);
@@ -69,14 +76,14 @@ export default function Routines() {
     setDragIndex(null);
   }
 
-  async function loadRoutineExercises(routineId) {
+  async function loadRoutineExercises(routineId, day) {
     setLoadingExercises(true);
 
-    const requestId = routineId;
+    const requestId = `${routineId}-${day}`;
     activeRequest.current = requestId;
 
     try {
-      const res = await api.get(`/routines/${routineId}/exercises`);
+      const res = await api.get(`/routines/${routineId}/exercises?day=${day}`);
 
       if (activeRequest.current !== requestId) return;
 
@@ -102,13 +109,12 @@ export default function Routines() {
     }
   }
 
-  async function renameRoutine(id) {
-    const routineId = id; // freeze it
-
-    if (!editName.trim() || !routineId) return;
+  async function updateRoutine(id, updates) {
+    const routineId = id;
+    if (!routineId) return;
 
     try {
-      const res = await api.patch(`/routines/${routineId}`, { name: editName });
+      const res = await api.patch(`/routines/${routineId}`, updates);
 
       setRoutines((prev) =>
         prev.map((r) => (r.id === routineId ? res.data : r))
@@ -118,13 +124,22 @@ export default function Routines() {
         setActiveRoutine(res.data);
       }
 
-      setEditingId(null);
-      setEditName("");
+      if (updates.name) {
+        setEditingId(null);
+        setEditName("");
+      }
     } catch (err) {
-      console.error("Rename failed", err);
-      alert(err.response?.data?.message || "Failed to rename");
+      console.error("Update failed", err);
+      alert(err.response?.data?.message || "Failed to update routine");
     }
   }
+
+  const handleDayToggle = (day) => {
+    setSelectedDay(day);
+    if (activeRoutine) {
+      updateRoutine(activeRoutine.id, { currentDay: day });
+    }
+  };
 
   async function deleteRoutine(id) {
     if (!confirm("Delete this routine?")) return;
@@ -216,7 +231,7 @@ export default function Routines() {
   }
 
   return (
-    <div className="exercises-page">
+    <div className="routines-page">
       {routinesError && (
         <p style={{ padding: "1rem 2rem", color: "#ef4444" }}>{routinesError}</p>
       )}
@@ -245,7 +260,7 @@ export default function Routines() {
                         if (e.key === "Enter") {
                           e.preventDefault();
                           e.stopPropagation();
-                          renameRoutine(r.id);
+                          updateRoutine(r.id, { name: editName });
                         }
 
                         if (e.key === "Escape") {
@@ -260,7 +275,7 @@ export default function Routines() {
                         if (activeRoutine?.id === r.id) return;
                         setRoutineExercises([]);
                         setActiveRoutine(r);
-                        loadRoutineExercises(r.id);
+                        setSelectedDay(r.currentDay || 1);
                       }}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
@@ -345,6 +360,21 @@ export default function Routines() {
                 </button>
               </div>
 
+              {/* Day Selector Tabs */}
+              <div className="routine-tabs-container">
+                <div className="routine-tabs">
+                  {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                    <button
+                      key={day}
+                      className={`tab-btn ${selectedDay === day ? "active" : ""}`}
+                      onClick={() => handleDayToggle(day)}
+                    >
+                      Day {day}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {routineExercises.length === 0 ? (
                 <div className="routine-empty">
                   Select an exercise from the right panel to begin building this
@@ -396,7 +426,7 @@ export default function Routines() {
             try {
               const res = await api.post(
                 `/routines/${activeRoutine.id}/exercises`,
-                { exerciseId: exercise.id }
+                { exerciseId: exercise.id, day: selectedDay }
               );
 
               setRoutineExercises((prev) => [

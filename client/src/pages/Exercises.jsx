@@ -259,7 +259,6 @@ export default function Exercises({ pickerMode = false, onSelectExercise }) {
             {activeTab === "stats" && (
               <div
                 className="stats-container"
-                style={{ paddingBottom: "40px" }}
               >
                 {historyData.length > 1 ? (
                   <div className="charts-stack">

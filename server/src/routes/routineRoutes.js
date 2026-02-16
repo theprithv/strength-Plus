@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post("/", protect, routineController.createRoutine);
 router.get("/", protect, routineController.getRoutines);
-router.patch("/:id", protect, routineController.renameRoutine);
+router.patch("/:id", protect, routineController.updateRoutine);
 
 router.patch("/:id/set-current", protect, routineController.setCurrentRoutine);
 router.delete("/:id", protect, routineController.deleteRoutine);
@@ -17,6 +17,7 @@ router.post("/exercises/:id/sets", protect, routineController.addSetToRoutineExe
 router.patch("/:id/reorder", protect, routineController.reorderRoutine);
 router.get("/:id/exercises", protect, routineController.getRoutineExercises);
 router.delete("/exercises/:id", protect, routineController.removeRoutineExercise);
+router.delete("/:routineId/exercises/by-exercise/:exerciseId", protect, routineController.removeExerciseFromRoutineByExerciseId);
 
 router.get("/current", protect, routineController.getCurrentRoutine);
 

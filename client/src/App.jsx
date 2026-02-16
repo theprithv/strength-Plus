@@ -6,7 +6,6 @@ import Workouts from "./pages/Workouts";
 import Routines from "./pages/Routines";
 import Exercises from "./pages/Exercises";
 import History from "./pages/History";
-import Settings from "./pages/Settings";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Workout from "./pages/Workout";
 import AppLayout from "./layouts/AppLayout";
@@ -94,16 +93,6 @@ function App() {
         }
       />
 
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Settings />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
     </Routes>
   );
 }

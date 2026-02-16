@@ -122,12 +122,12 @@ const Dashboard = () => {
         </div>
 
         {/* MUSCLE BALANCE (RADAR CHART) */}
-        <div style={{ marginTop: "22px" }}>
+        <div style={{ marginTop: "12px" }}>
           <MuscleSetsChart />
         </div>
 
         {/* MUSCLE OVERLOAD CHART */}
-        <div style={{ marginTop: "22px" }}>
+        <div style={{ marginTop: "12px" }}>
           <MuscleOverloadChart />
         </div>
       </div>

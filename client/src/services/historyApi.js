@@ -10,3 +10,7 @@ export const getWorkoutsByDate = async (date) => {
   const res = await api.get(`/workouts/by-date/${formatted}`);
   return res.data;
 };
+export const getAllWorkouts = async () => {
+  const res = await api.get("/workouts");
+  return res.data;
+};

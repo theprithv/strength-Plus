@@ -15,6 +15,8 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import geminiRoutes from "./routes/geminiRoutes.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
+import { cleanupExpiredOTPs } from "./utils/otpCleanup.js";
+
 dotenv.config();
 
 const app = express();
@@ -52,4 +54,10 @@ app.get("/", (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
+  
+  // Run OTP cleanup once on startup and then every hour
+  cleanupExpiredOTPs();
+  setInterval(cleanupExpiredOTPs, 60 * 60 * 1000);
+});

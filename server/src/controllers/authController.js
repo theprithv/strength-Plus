@@ -3,7 +3,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
-import { sendResetEmail } from "../utils/emailService.js";
+import { sendResetEmail, sendOTPEmail } from "../utils/emailService.js";
+import { generateOTP, hashOTP, compareOTP } from "../utils/otpUtils.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -27,8 +28,16 @@ export const register = async (req, res) => {
     const hashed = await bcrypt.hash(password, 12); // Production-level hashing
 
     const user = await prisma.user.create({
-      data: { email: trimmedEmail, password: hashed, name: displayName }
+      data: { 
+        email: trimmedEmail, 
+        password: hashed, 
+        name: displayName,
+        isVerified: false // Explicitly set false
+      }
     });
+
+    // Log for debug (OTP will be sent via separate call or automatically)
+    console.log(`[AUTH] New user registered: ${trimmedEmail}. Awaiting verification.`);
 
     // Initialize Profile for manual registration too
     await prisma.profile.create({
@@ -42,9 +51,12 @@ export const register = async (req, res) => {
       }
     });
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-    res.json({ token, user: safeUser(user) });
+    // We don't log them in yet, they need to verify
+    // But we still return user info for the UI to know who to verify
+    res.json({ 
+      message: "Registration successful. Please verify your email.",
+      user: safeUser(user) 
+    });
   } catch (err) {
     console.error("Registration error:", err);
     res.status(500).json({ message: "Registration failed" });
@@ -67,7 +79,7 @@ export const login = async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ message: genericMsg });
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
     res.json({ token, user: safeUser(user) });
   } catch (err) {
@@ -187,6 +199,7 @@ export const googleLogin = async (req, res) => {
           email: trimmedEmail,
           name: name || trimmedEmail.split("@")[0],
           googleId: googleId,
+          isVerified: true // Google users are pre-verified
         }
       });
       
@@ -205,7 +218,7 @@ export const googleLogin = async (req, res) => {
     } else if (!user.googleId) {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { googleId: googleId }
+        data: { googleId: googleId, isVerified: true }
       });
     }
 
@@ -215,6 +228,134 @@ export const googleLogin = async (req, res) => {
   } catch (err) {
     console.error("Google Login Error:", err);
     res.status(500).json({ message: "Google authentication failed" });
+  }
+};
+
+// --- OTP Logic ---
+
+/**
+ * Request a new OTP for email verification.
+ * POST /auth/send-otp
+ */
+export const sendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+    
+    const trimmedEmail = String(email).trim().toLowerCase();
+
+    // 1. Rate Limiting: Max 3 requests per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const otpCount = await prisma.otp.count({
+      where: {
+        email: trimmedEmail,
+        createdAt: { gte: oneHourAgo }
+      }
+    });
+
+    if (otpCount >= 3) {
+      return res.status(429).json({ message: "OTP request limit reached. Please wait an hour before requesting a new code." });
+    }
+
+    // 2. Resend Cooldown: 60 seconds
+    const lastOtp = await prisma.otp.findFirst({
+      where: { email: trimmedEmail },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (lastOtp && (Date.now() - new Date(lastOtp.createdAt).getTime() < 60000)) {
+      return res.status(429).json({ message: "Please wait 60 seconds before requesting a new OTP." });
+    }
+
+    // 3. Generate and Hash OTP
+    const otp = generateOTP();
+    const hashedOtp = await hashOTP(otp);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    // 4. Update/Create OTP record (invalidate old ones)
+    await prisma.otp.deleteMany({ where: { email: trimmedEmail } });
+    await prisma.otp.create({
+      data: {
+        email: trimmedEmail,
+        otp: hashedOtp,
+        expiresAt
+      }
+    });
+
+    // 5. Send Email
+    console.log(`[AUTH] Sending OTP ${otp} to ${trimmedEmail}`);
+    await sendOTPEmail(trimmedEmail, otp);
+
+    res.json({ message: "Verification code sent to your email" });
+  } catch (err) {
+    console.error("Send OTP error:", err);
+    res.status(500).json({ message: "Failed to send verification code" });
+  }
+};
+
+/**
+ * Verify the OTP provided by the user.
+ * POST /auth/verify-otp
+ */
+export const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
+
+    const trimmedEmail = String(email).trim().toLowerCase();
+
+    // 1. Find OTP record
+    const otpRecord = await prisma.otp.findFirst({
+      where: { email: trimmedEmail }
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: "No active verification code found for this email" });
+    }
+
+    // 2. Check Expiration
+    if (new Date() > otpRecord.expiresAt) {
+      await prisma.otp.delete({ where: { id: otpRecord.id } });
+      return res.status(400).json({ message: "Verification code has expired. Please request a new one." });
+    }
+
+    // 3. Check Attempt Count (max 5)
+    if (otpRecord.attemptsCount >= 5) {
+      await prisma.otp.delete({ where: { id: otpRecord.id } });
+      return res.status(400).json({ message: "Too many failed attempts. Please request a new code." });
+    }
+
+    // 4. Verify Code
+    const isValid = await compareOTP(otp, otpRecord.otp);
+    if (!isValid) {
+      await prisma.otp.update({
+        where: { id: otpRecord.id },
+        data: { attemptsCount: { increment: 1 } }
+      });
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+
+    // 5. Success: Activate User
+    const user = await prisma.user.update({
+      where: { email: trimmedEmail },
+      data: { isVerified: true }
+    });
+
+    // Clean up
+    await prisma.otp.delete({ where: { id: otpRecord.id } });
+
+    // Generate JWT for immediate login
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    res.json({ 
+      message: "Email verified successfully!",
+      token,
+      user: safeUser(user)
+    });
+  } catch (err) {
+    console.error("Verify OTP error:", err);
+    res.status(500).json({ message: "Verification failed" });
   }
 };
 

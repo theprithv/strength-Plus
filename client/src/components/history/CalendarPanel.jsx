@@ -27,10 +27,11 @@ const CalendarPanel = ({ selectedDate, setSelectedDate, workouts = [] }) => {
         <Calendar
           onChange={setSelectedDate}
           value={selectedDate}
-          tileClassName={({ date, view }) => {
+          tileContent={({ date, view }) => {
             if (view === "month" && hasWorkoutOnDate(date)) {
-              return "has-workout";
+              return <div className="tile-workout-dot" />;
             }
+            return null;
           }}
         />
       </div>

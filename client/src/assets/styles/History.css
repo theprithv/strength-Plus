@@ -16,7 +16,6 @@
   width: 70%;
   padding: 20px;
   overflow-y: auto;
-  background-color: #0b0b0b;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -30,7 +29,6 @@
   width: 32%;
   display: flex;
   flex-direction: column;
-  background-color: #0b0b10;
   height: 100%;
   min-height: 0;
 }
@@ -51,7 +49,6 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background-color: #0b0b0b;
 }
 
 .history-summary-container {
@@ -60,12 +57,12 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background-color: #0b0b0b;
 }
 
 .calendar-box,
 .summary-box {
-  background-color: #0f0f0f;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
   border-radius: 20px;
   height: 100%;
   display: flex;
@@ -74,8 +71,8 @@
 
 .panel-header {
   padding: 10px 12px;
-  border-bottom: 1px solid #181818;
-  background-color: #111216;
+  border-bottom: 1px solid #1f2937;
+  background: transparent;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
 }
@@ -89,8 +86,8 @@
 /* === Main area === */
 
 .history-main-wrapper {
-  background-color: #0f0f0f;
-  border: 1px solid #181818;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
   border-radius: 10px;
   height: 100%;
   display: flex;
@@ -99,7 +96,8 @@
 
 .history-header {
   padding: 14px 16px;
-  background: #111216;
+  background: transparent;
+  border-bottom: 1px solid #1f2937;
 }
 
 .history-header h2 {
@@ -113,7 +111,7 @@
   flex: 1;
   padding: 15px;
   overflow-y: auto;
-  background: #111216;
+  background: transparent;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -129,12 +127,34 @@
 }
 
 /* === Workout cards & exercise list === */
-
 .history-workout-card {
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  position: relative;
   transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.history-workout-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.workout-session-badge {
+  display: inline-block;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 50px;
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(56, 189, 248, 0.2);
 }
 
 .workout-card-header {
@@ -178,8 +198,8 @@
 }
 
 .exercise-item {
-  background: linear-gradient(180deg, #15171d, #0f1015);
-  border: 2px solid #181818;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
   border-radius: 8px;
   padding: 10px 10px 15px 10px;
 }
@@ -232,19 +252,20 @@
 
 .set-table {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .set-row {
   display: flex;
-  justify-content: space-between;
-  background-color: #2a2d36;
-  padding: 8px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #1f2937;
+  padding: 6px 12px;
   border-radius: 6px;
   font-size: 13px;
   color: #bbb;
-  margin-bottom: 6px;
 }
 
 .set-label {
@@ -255,23 +276,13 @@
   color: #ddd;
 }
 
-.sets-info {
-  font-size: 14px;
-  color: #7a7a8c;
-}
-
-/* === Day summary panel === */
-
 .summary-body {
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   flex: 1;
-  background-color: #111216;
-  border-radius: 0 0 12px 12px;
-  background: linear-gradient(145deg, #141418 0%, #0c0c0f 100%);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  background: transparent;
 }
 
 .summary-date {
@@ -290,15 +301,16 @@
 }
 
 .summary-card {
-  background-color: #272a31;
-  border: 1px solid #181820;
-  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 12px;
   padding: 14px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: border 0.2s ease;
 }
 
 .summary-label {
@@ -325,88 +337,133 @@
   text-align: center;
 }
 
-.premium-lottie-wrapper {
+.empty-state-visual {
   position: relative;
-  width: 260px;
-  height: 260px;
-  margin-bottom: -50px;
-  filter: saturate(1.2) brightness(1.1);
-  transition: filter 0.3s ease;
+  width: 200px;
+  height: 200px;
+  margin-bottom: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.lottie-bg-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 160px;
-  height: 160px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
-  filter: blur(35px);
-  z-index: -1;
+.lottie-container {
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  margin-top: 20px;
+  margin-bottom: -90px;
+  padding-left: 15px;
 }
+
+
 
 .premium-title {
-  color: #ffffff;
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0;
+  font-size: 22px;
+  color: #fff;
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .premium-subtitle {
-  color: #83898f;
+  color: #a0a0b2;
+  max-width: 320px;
+  margin-bottom: 6px;
+  margin-top: 6px;
   font-size: 15px;
-  opacity: 0.8;
-  max-width: 300px;
-  margin: 4px 0;
+  line-height: 1.5;
 }
 
 .premium-cta {
   background: transparent;
   border: none;
   color: #38bdf8;
-  padding: 0 10px;
-  font-size: 16px;
+  font-size: 14.5px;
   font-weight: 500;
-  letter-spacing: 0.5px;
-  margin-left: 3px;
   cursor: pointer;
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.premium-cta::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  background-color: #38bdf8;
-  transition: all 0.3s ease;
-  transform: translateX(-50%);
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
-}
-
-/* === State: hover === */
-
-.history-workout-card:hover {
-  border-color: #222;
-}
-
-.exercise-item:hover {
-  border-color: #222;
-}
-
-.empty-history-container:hover .premium-lottie-wrapper {
-  filter: saturate(1.4) brightness(1.2);
+  transition: color 0.2s ease;
+  letter-spacing: 0.65px;
+  padding: 0;
 }
 
 .premium-cta:hover {
-  color: #ffffff;
-  transform: translateY(-1px);
+  color: #7dd3fc;
 }
 
-.summary-card:hover {
-  border-color: #008cff33;
+/* === Responsive States (Added to end for priority) === */
+
+/* Tablet & Intermediate Shrink: Calendar/Summary above History Area horizontally */
+@media (max-width: 1100px) {
+  .history-page-container {
+    flex-direction: column-reverse;
+    height: auto !important;
+    min-height: auto !important;
+    overflow-y: visible !important;
+  }
+
+  .history-main-area {
+    width: 100% !important;
+    padding: 20px 15px;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+
+  .history-right-panel {
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  .history-right-wrapper {
+    flex-direction: row !important;
+    gap: 15px;
+    padding: 10px 15px;
+  }
+
+  .history-calendar-container,
+  .history-summary-container {
+    flex: 1 !important;
+    padding: 0 !important;
+    min-height: 480px;
+  }
+
+  .calendar-box,
+  .summary-box {
+    height: 100%;
+  }
+
+  .empty-state-visual {
+    display: none !important;
+  }
+}
+
+/* Mobile Layout: Everything stacked vertically */
+@media (max-width: 768px) {
+
+  .history-right-wrapper {
+    flex-direction: column !important;
+  }
+
+  .history-calendar-container,
+  .history-summary-container {
+    min-height: auto !important;
+  }
+
+  .calendar-box {
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-page-container {
+    padding-bottom: 100px !important;
+  }
+
+  .history-header h2 {
+    font-size: 20px;
+  }
+
+  .history-workout-card {
+    padding: 15px;
+  }
 }

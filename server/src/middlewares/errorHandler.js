@@ -12,7 +12,9 @@ const errorHandler = (err, req, res, next) => {
 
   res.status(statusCode).json({
     success: false,
-    message: err.message,
+    message: process.env.NODE_ENV === "production" 
+      ? "An unexpected error occurred. Please try again later." 
+      : err.message,
     stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack,
   });
 };

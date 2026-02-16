@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 import ExerciseLibraryContent from "../components/exercises/ExerciseLibraryContent";
 import WorkoutExerciseModal from "../components/workouts/WorkoutExerciseModal";
 import api from "../services/api";
@@ -9,11 +10,16 @@ export default function Workouts() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
 
   // 🧠 Session control
-  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
-  const [activeWorkoutId, setActiveWorkoutId] = useState(null);
+  const { 
+    isWorkoutActive, 
+    setIsWorkoutActive, 
+    activeWorkoutId, 
+    setActiveWorkoutId, 
+    workoutStartTime: startTime, 
+    setWorkoutStartTime: setStartTime 
+  } = useContext(AuthContext);
 
-  // ⏱ Time tracking
-  const [startTime, setStartTime] = useState(null);
+  const [activeRoutineId, setActiveRoutineId] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
 
   // 🏋️ Workout data
@@ -41,9 +47,11 @@ export default function Workouts() {
 
         if (res.data) {
           setCurrentSplit(res.data.name);
+          setActiveRoutineId(res.data.id);
 
           const injected = res.data.exercises.map((re) => ({
             id: re.id,
+            exerciseId: re.exerciseId,
             name: re.exercise.name,
             sets: re.sets.map((s) => ({
               id: s.id,
@@ -62,41 +70,38 @@ export default function Workouts() {
     loadCurrentRoutine();
   }, []);
 
-  // 🔄 Restore session & check window size
+  // 🔄 Check window size
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 1024);
     window.addEventListener('resize', handleResize);
-
-    async function restoreSession() {
-      try {
-        const res = await api.get("/workouts/active");
-
-        if (!res.data) return;
-
-        setActiveWorkoutId(res.data.id);
-        setIsWorkoutActive(true);
-        setStartTime(
-          new Date(res.data.startTime || res.data.createdAt).getTime()
-        );
-
-        const restored = res.data.exercises.map((ex) => ({
-          id: ex.id,
-          name: ex.exercise.name,
-          sets: ex.sets.map((s) => ({
-            id: s.id,
-            weight: s.weight,
-            reps: s.reps,
-          })),
-        }));
-
-        setExercises(restored);
-      } catch (err) {
-        console.error("Session restore failed:", err);
-      }
-    }
-
-    restoreSession();
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // 🔄 Load exercises if workout is active
+  useEffect(() => {
+    if (isWorkoutActive && activeWorkoutId) {
+      async function loadActiveExercises() {
+        try {
+          const res = await api.get("/workouts/active");
+          if (!res.data) return;
+          
+          const restored = res.data.exercises.map((ex) => ({
+            id: ex.id,
+            name: ex.exercise.name,
+            sets: ex.sets.map((s) => ({
+              id: s.id,
+              weight: s.weight,
+              reps: s.reps,
+            })),
+          }));
+          setExercises(restored);
+        } catch (err) {
+          console.error("Failed to load active exercises:", err);
+        }
+      }
+      loadActiveExercises();
+    }
+  }, [isWorkoutActive, activeWorkoutId]);
 
   // 🖱 Close menus on click outside
   useEffect(() => {
@@ -160,6 +165,7 @@ export default function Workouts() {
       // 🧠 NEW: Load routine-powered workout into UI
       const hydratedExercises = workout.exercises.map((ex) => ({
         id: ex.id,
+        exerciseId: ex.exerciseId,
         name: ex.exercise.name,
         sets: ex.sets.map((set) => ({
           id: set.id,
@@ -311,12 +317,27 @@ export default function Workouts() {
     setEditReps("");
   }
 
-  async function removeExercise(workoutExerciseId) {
+  async function removeExercise(exerciseObjId) {
     if (!window.confirm("Remove this exercise and all its sets?")) return;
     
+    const exerciseToRemove = exercises.find(ex => ex.id === exerciseObjId);
+    if (!exerciseToRemove) return;
+
     try {
-      await api.delete(`/workouts/exercises/${workoutExerciseId}`);
-      setExercises(prev => prev.filter(ex => ex.id !== workoutExerciseId));
+      if (!isWorkoutActive) {
+        // In Preview Mode, ID is the RoutineExercise.id
+        await api.delete(`/routines/exercises/${exerciseObjId}`);
+      } else {
+        // In Active Workout, ID is the WorkoutExercise.id
+        await api.delete(`/workouts/exercises/${exerciseObjId}`);
+        
+        // Also remove from routine as requested
+        if (activeRoutineId && exerciseToRemove.exerciseId) {
+          await api.delete(`/routines/${activeRoutineId}/exercises/by-exercise/${exerciseToRemove.exerciseId}`);
+        }
+      }
+
+      setExercises(prev => prev.filter(ex => ex.id !== exerciseObjId));
       setOpenMenuId(null);
     } catch (err) {
       console.error("Failed to remove exercise:", err);
@@ -407,11 +428,11 @@ export default function Workouts() {
               <header className="workout-header-zone">
                 <div className="header-top-flex">
                   <div>
-                    <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#fff' }}>
-                      {isWorkoutActive ? "Active Workout" : "Ready to Train?"}
+                    <h2 style={{ fontSize: '26px', fontWeight: '640', color: '#fff'}}>
+                      {isWorkoutActive ? "Active Workout" : "Start training Today"}
                     </h2>
-                    <p style={{ color: 'var(--workout-text-dim)', fontSize: '14px', marginTop: '4px' }}>
-                      Split: <strong style={{ color: '#fff' }}>{currentSplit || "Custom"}</strong>
+                    <p style={{ color: 'var(--workout-text-dim)', fontSize: '14px', marginTop: '-20px' }}>
+                      Split: <strong style={{ color: '#38bdf8', fontWeight: '400' }}>{currentSplit || "Custom"}</strong>
                     </p>
                   </div>
 
@@ -528,10 +549,12 @@ export default function Workouts() {
                                     <>
                                       <span className="set-v-text">{set.weight} <small style={{ fontSize: '10px', opacity: 0.6 }}>KG</small></span>
                                       <span className="set-v-text">{set.reps} <small style={{ fontSize: '10px', opacity: 0.6 }}>REPS</small></span>
-                                      <div className="set-actions">
-                                        <button className="set-action-btn edit" onClick={() => startEditSet(set.id, set.weight, set.reps)} title="Edit Set">✎</button>
-                                        <button className="set-action-btn delete" onClick={() => removeSet(ex.id, set.id)} title="Delete Set">×</button>
-                                      </div>
+                                      {isWorkoutActive && (
+                                        <div className="set-actions">
+                                          <button className="set-action-btn edit" onClick={() => startEditSet(set.id, set.weight, set.reps)} title="Edit Set">✎</button>
+                                          <button className="set-action-btn delete" onClick={() => removeSet(ex.id, set.id)} title="Delete Set">×</button>
+                                        </div>
+                                      )}
                                     </>
                                   )}
                                 </div>
@@ -540,7 +563,10 @@ export default function Workouts() {
                           )}
 
                           <div className="add-set-modern-zone">
-                            <AddSetInline onAdd={(w, r) => addSet(ex.id, w, r)} />
+                            <AddSetInline 
+                              isActive={isWorkoutActive}
+                              onAdd={(w, r) => addSet(ex.id, w, r)} 
+                            />
                           </div>
                         </div>
                       </div>
@@ -614,7 +640,7 @@ export default function Workouts() {
   );
 }
 
-function AddSetInline({ onAdd }) {
+function AddSetInline({ onAdd, isActive }) {
   const [open, setOpen] = useState(false);
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
@@ -626,6 +652,7 @@ function AddSetInline({ onAdd }) {
     setReps("");
     setOpen(false);
   }
+
 
   return (
     <div className="modern-set-inputs">
@@ -664,8 +691,23 @@ function AddSetInline({ onAdd }) {
         </>
       ) : (
         <button 
-          style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.04)', border: '1px dashed var(--workout-border)', color: 'var(--workout-accent)', fontWeight: '500', cursor: 'pointer' }}
-          onClick={() => setOpen(true)}
+          style={{ 
+            width: '100%', 
+            padding: '12px', 
+            borderRadius: '12px', 
+            background: 'rgba(255,255,255,0.04)', 
+            border: '1px dashed var(--workout-border)', 
+            color: 'var(--workout-accent)', 
+            fontWeight: '500', 
+            cursor: 'pointer' 
+          }}
+          onClick={() => {
+            if (!isActive) {
+              alert("Please start the workout first");
+              return;
+            }
+            setOpen(true);
+          }}
         >
           + Add New Set
         </button>

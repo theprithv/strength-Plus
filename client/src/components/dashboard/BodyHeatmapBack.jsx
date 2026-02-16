@@ -6,7 +6,7 @@ export default function BodyHeatmapBack({ onClick, onMouseEnter, onMouseLeave })
       <svg
         viewBox="0 0 627 940"
         preserveAspectRatio="xMidYMid meet"
-        style={{ width: "83%", height: "83%" }}
+        style={{ width: "100%", height: "100%" }}
         onClick={onClick}
       >
         {/* SVG CONTENT */}

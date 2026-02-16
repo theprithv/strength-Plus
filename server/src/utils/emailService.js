@@ -43,3 +43,57 @@ export const sendResetEmail = async (email, resetToken) => {
   // 4. Send the email
   await transporter.sendMail(mailOptions);
 };
+
+/**
+ * Send an OTP verification email to the user.
+ * @param {string} email - Recipient email
+ * @param {string} otp - The 6-digit OTP
+ */
+export const sendOTPEmail = async (email, otp) => {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"StrengthPlus Support" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Verify your Strength+ Account email address",
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #333; line-height: 1.5;">
+        <h2 style="font-size: 24px; font-weight: 600; color: #000; margin-bottom: 24px; letter-spacing: -0.02em;">Verify your Strength+ Account email address</h2>
+        
+        <p style="font-size: 16px; margin-bottom: 24px;">
+          You've chosen this email address for your Strength+ Account. To verify this email address belongs to you, enter the code below on the email verification page:
+        </p>
+
+        <div style="margin: 35px 0; font-size: 38px; font-weight: 700; color: #000; letter-spacing: 4px;">
+          ${otp}
+        </div>
+
+        <p style="font-size: 16px; margin-bottom: 35px;">
+          This code will expire within 5 minutes after this email was sent.
+        </p>
+
+        <h3 style="font-size: 16px; font-weight: 600; color: #000; margin: 0 0 8px 0;">Why you received this email.</h3>
+        <p style="font-size: 14px; color: #666; margin: 0 0 24px 0;">
+          Strength+ requires verification whenever an email address is selected for a Strength+ Account. Your Strength+ Account cannot be used until you verify it.
+        </p>
+
+        <p style="font-size: 14px; color: #666; margin: 0 0 40px 0;">
+          If you did not make this request, you can ignore this email. No Strength+ Account will be created without verification.
+        </p>
+
+        <div style="border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #999;">
+          Strength+ — Precision Strength Tracking
+        </div>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};

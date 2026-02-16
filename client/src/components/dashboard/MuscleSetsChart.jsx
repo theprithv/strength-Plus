@@ -115,10 +115,10 @@ const MuscleSetsChart = () => {
         </span>
       </div>
 
-      <div className="chart-container" style={{ width: "100%", minHeight: "150px" }}>
+      <div className="chart-container" style={{ width: "100%", height: "auto", minHeight: "150px" }}>
         <ResponsiveContainer 
           width="100%" 
-          height={Math.max(chartData.length * 30 + 50, 150)} 
+          height={Math.max(chartData.length * 40 + 40, 180)} 
           minWidth={0} 
           minHeight={0}
           debounce={50}
@@ -126,8 +126,8 @@ const MuscleSetsChart = () => {
           <BarChart
             layout="vertical"
             data={chartData}
-            /* Remove large left margin to bring labels to the edge */
-            margin={{ left: 0, right: 45, top: 0, bottom: 0 }}
+            /* Increase right margin and add a small left margin for safety */
+            margin={{ left: 10, right: 60, top: 0, bottom: 0 }}
           >
             <XAxis type="number" hide />
             <YAxis
@@ -135,15 +135,15 @@ const MuscleSetsChart = () => {
               type="category"
               tick={{
                 fill: "#9ca3af",
-                fontSize: 13.5,
+                fontSize: 13,
                 fontWeight: 400,
                 textAnchor: "start",
               }}
               width={85}
               axisLine={false}
               tickLine={false}
-              /* dx moves the text horizontally. -90 (or similar) shifts it to the far left of the width */
-              dx={-75}
+              /* Lean labels closer to the bar start point */
+              dx={-80}
             />
             <Tooltip
               content={<CustomTooltip />}

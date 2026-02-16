@@ -26,7 +26,8 @@ export async function addExerciseToRoutine(req, res) {
     const routineExercise = await routineService.addExerciseToRoutine(
       req.user.id,
       req.params.id,
-      req.body.exerciseId
+      req.body.exerciseId,
+      req.body.day || 1
     );
 
     res.json(routineExercise);
@@ -72,12 +73,19 @@ export const reorderRoutine = async (req, res) => {
 export async function getRoutineExercises(req, res) {
   try {
     const routineId = req.params.id;
+    const day = req.query.day ? parseInt(req.query.day) : null;
+
+    const where = {
+      routineId,
+      routine: { userId: req.user.id },
+    };
+
+    if (day) {
+      where.day = day;
+    }
 
     const exercises = await prisma.routineExercise.findMany({
-      where: {
-        routineId,
-        routine: { userId: req.user.id },
-      },
+      where,
       include: {
         exercise: true,
       },
@@ -113,13 +121,17 @@ export async function removeRoutineExercise(req, res) {
   }
 }
 
-export async function renameRoutine(req, res) {
-  const { name } = req.body;
+export async function updateRoutine(req, res) {
+  const { name, currentDay } = req.body;
   const routineId = req.params.id;
+
+  const data = {};
+  if (name !== undefined) data.name = name;
+  if (currentDay !== undefined) data.currentDay = currentDay;
 
   const updated = await prisma.routine.update({
     where: { id: routineId },
-    data: { name },
+    data,
   });
 
   res.json(updated);
@@ -143,4 +155,38 @@ export async function getCurrentRoutine(req, res) {
   });
 
   res.json(routine);
+}
+
+export async function removeExerciseFromRoutineByExerciseId(req, res) {
+  try {
+    const { routineId, exerciseId } = req.params;
+
+    // First find matching exercises to delete their sets
+    const existingExercises = await prisma.routineExercise.findMany({
+      where: {
+        routineId,
+        exerciseId,
+        routine: { userId: req.user.id }
+      }
+    });
+
+    if (existingExercises.length > 0) {
+      const ids = existingExercises.map(e => e.id);
+      
+      // 1. Delete sets
+      await prisma.routineSet.deleteMany({
+        where: { routineExerciseId: { in: ids } }
+      });
+
+      // 2. Delete routine exercises
+      await prisma.routineExercise.deleteMany({
+        where: { id: { in: ids } }
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Remove exercise from routine failed:", err);
+    res.status(500).json({ message: "Failed to remove exercise from routine" });
+  }
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { MUSCLES, EQUIPMENT } from "../../constants/exerciseOptions.js";
+import logo from "../../assets/images/new.png";
 
 function AddExerciseModal({ onClose, onAdd, editExercise = null }) {
   const [name, setName] = useState("");
@@ -85,9 +86,9 @@ function AddExerciseModal({ onClose, onAdd, editExercise = null }) {
         <div className="modal-body hide-scroll">
           <div className="branding-preview">
             <div className="branding-circle">
-              <img src="/assets/images/s+.png" alt="Strength+" className="app-logo-preview" />
+              <img src={logo} alt="Strength+" className="app-logo-preview" />
             </div>
-            <p className="branding-text">Custom exercises are powered by Strength+</p>
+            <p className="branding-text">Precision engineering for your ultimate routine</p>
           </div>
 
           <label>Exercise Name</label>

@@ -1,9 +1,10 @@
 import axios from "axios";
 
-const baseURL =
-  typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL
-    ? import.meta.env.VITE_API_URL
-    : "http://localhost:5000/api";
+const baseURL = import.meta.env?.VITE_API_URL;
+
+if (!baseURL) {
+  console.warn("VITE_API_URL is not defined. API calls might fail.");
+}
 
 const api = axios.create({ baseURL });
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import searchingAnimation from "../../assets/icons/noResultFound.json";
+import noDataAnimation from "../../assets/icons/No Data.json";
 
 const HistoryMainArea = ({ selectedDate, workouts, loading }) => {
   // Safe-guard to prevent the toLocaleDateString error
@@ -35,9 +35,10 @@ const HistoryMainArea = ({ selectedDate, workouts, loading }) => {
 
         {!loading && (!workouts || workouts.length === 0) && (
           <div className="empty-history-container">
-            <div className="premium-lottie-wrapper">
-              <DotLottieReact data={searchingAnimation} loop autoplay />
-              <div className="lottie-bg-glow"></div>
+            <div className="empty-state-visual">
+              <div className="lottie-container">
+                <DotLottieReact data={noDataAnimation} loop autoplay />
+              </div>
             </div>
 
             <div className="empty-text-content">
@@ -58,11 +59,12 @@ const HistoryMainArea = ({ selectedDate, workouts, loading }) => {
 
         {!loading &&
           workouts &&
-          workouts.map((workout) => (
+          workouts.map((workout, index) => (
             <div
               key={workout.id || workout._id}
               className="history-workout-card"
             >
+              <div className="workout-session-badge">Session #{workouts.length - index}</div>
               <div className="workout-card-header">
                 <div className="workout-title">
                   {workout.splitName || "Workout"}

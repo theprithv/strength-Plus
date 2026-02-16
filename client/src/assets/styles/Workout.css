@@ -29,7 +29,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 8px 32px 32px 32px;
+  padding: 8px 22px 22px 22px;
   max-width: 1000px;
   margin-right: auto;
   overflow-y: auto;
@@ -59,8 +59,10 @@
 }
 
 .stat-v-card {
-  background: var(--workout-panel);
-  border: 1px solid var(--workout-border);
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -70,7 +72,7 @@
 }
 
 .stat-v-card:hover {
-  border-color: rgba(56, 189, 248, 0.3);
+  border-color: rgba(56, 189, 248, 0.4);
 }
 
 .stat-v-label {
@@ -449,23 +451,40 @@
 
 .start-workout-btn {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 22px;
+  padding: 14px 20px;
   border-radius: 12px;
-  background: var(--workout-accent);
-  color: #000;
-  font-weight: 500;
-  font-size: 16px;
-  border: none;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  margin-bottom: 12px;
+}
+
+.start-workout-btn:hover:not(.active) {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+}
+
+.start-workout-btn:active:not(.active) {
+  transform: translateY(0);
 }
 
 .start-workout-btn.active {
-  background: var(--workout-panel);
-  color: var(--workout-text-dim);
-  border: 1px solid var(--workout-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   cursor: default;
+  opacity: 0.8;
 }
 
 .finish-workout-btn {

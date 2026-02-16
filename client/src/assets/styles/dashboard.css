@@ -160,10 +160,17 @@ body {
 
 .calendar-heatmap-center {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.calendar-heatmap-center::-webkit-scrollbar {
+  display: none;
 }
 
 .dashboard-right .placeholder {
@@ -378,6 +385,15 @@ body {
 .year-heatmap-wrapper {
   position: relative;
   margin-top: 12px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.year-heatmap-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .year-heatmap {
@@ -427,8 +443,11 @@ body {
 
 .heatmap-svg-premium {
   width: 100%;
+  min-width: 720px;
+  /* Force minimum width to ensure readability */
   height: auto;
   overflow: visible !important;
+  display: block;
 }
 
 /* === Quick Stats === */
@@ -603,6 +622,8 @@ body {
   color: #9ca3af;
   font-size: 14.2px;
   font-weight: 500;
+  flex-wrap: wrap;
+  /* Allow wrapping on narrow headers */
 }
 
 .streak-summary span {
@@ -943,10 +964,9 @@ svg path:not(.muscle-path) {
     display: flex;
     flex-direction: column;
     height: auto;
-    min-height: 100vh;
+    min-height: auto !important;
     overflow-y: visible;
-    /* Let the page scroll naturally */
-    padding: 20px 24px 40px;
+    padding: 20px 24px 10px;
     gap: 32px;
   }
 
@@ -955,7 +975,7 @@ svg path:not(.muscle-path) {
     height: auto;
     overflow: visible;
     flex: none;
-    /* Do not shrink */
+    gap: 24px;
   }
 
   .dashboard-right {
@@ -964,33 +984,28 @@ svg path:not(.muscle-path) {
     height: auto;
     border-left: none;
     border-top: 1px solid #1f2937;
-    padding: 24px 0 0;
-    /* Clear inherited left-padding */
+    padding: 24px 0 0px;
     display: grid;
-    /* grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); <-- Old: allowed side-by-side */
-    grid-template-columns: 1fr;
-    /* New: Force vertical stack (Heatmap on top, Stats below) */
-    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
   }
 
   .dashboard-right .heatmap-card {
-    min-height: 380px;
-    /* Give heatmap plenty of room */
-    grid-row: span 2;
+    min-height: 480px;
+    grid-row: span 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
   }
 
   .body-heatmap-container {
-    height: 340px;
-    /* Fixed height to constrain SVG */
+    height: 400px;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
-    /* Safety clip */
+    overflow: visible;
   }
 
   .body-heatmap-svg {
@@ -1012,9 +1027,9 @@ svg path:not(.muscle-path) {
     display: flex;
     flex-direction: column;
     height: auto;
-    min-height: 100vh;
+    min-height: auto !important;
     overflow-y: visible;
-    padding: 16px 12px 60px;
+    padding: 16px 12px 10px;
     gap: 24px;
   }
 
@@ -1023,6 +1038,7 @@ svg path:not(.muscle-path) {
     height: auto;
     overflow: visible;
     flex: none;
+    gap: 20px;
   }
 
   .dashboard-right {
@@ -1031,12 +1047,12 @@ svg path:not(.muscle-path) {
     height: auto;
     border-left: none;
     border-top: 1px solid #1f2937;
-    padding: 20px 0 0;
+    padding: 20px 0 40px;
     /* Clear inherited left-padding */
     display: flex;
     /* Stack widgets vertically on mobile */
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
   }
 
   .heatmap-card {
@@ -1085,21 +1101,22 @@ svg path:not(.muscle-path) {
   .calendar-meta {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 16px;
+    margin-bottom: 24px;
     padding: 0 4px;
   }
 
   .streak-summary {
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 20px;
     font-size: 13px;
     width: 100%;
     justify-content: flex-start;
   }
 
   .year-trigger {
-    font-size: 14px;
+    font-size: 16px;
+    /* slightly larger for readability on small screens */
   }
 
   .calendar-section {
@@ -1123,7 +1140,7 @@ svg path:not(.muscle-path) {
 
   /* Force heatmap to retain size to be scrollable */
   .heatmap-svg-premium {
-    min-width: 600px;
+    min-width: 700px;
     height: auto;
     display: block;
   }
@@ -1133,6 +1150,10 @@ svg path:not(.muscle-path) {
   /* Mobile specific heatmap fix */
   .body-heatmap-container {
     max-height: 300px;
+  }
+
+  .stats-card {
+    margin-bottom: 24px;
   }
 
   .quickstats-root {
@@ -1322,8 +1343,17 @@ svg path:not(.muscle-path) {
   border-top: 1px solid #1f2937;
 }
 
+.sets-chart-card .chart-container {
+  height: auto !important;
+  overflow: hidden;
+}
+
+.sets-chart-card .chart-container svg {
+  overflow: hidden !important;
+}
+
 .sets-chart-card .recharts-responsive-container {
-  padding-right: 25px !important;
+  padding-right: 0 !important;
 }
 
 /* Smooth transitions for the bar growth */
@@ -1348,7 +1378,6 @@ svg path:not(.muscle-path) {
 }
 
 .overload-chart-card {
-  margin-top: 22px;
   min-height: 380px;
 }
 

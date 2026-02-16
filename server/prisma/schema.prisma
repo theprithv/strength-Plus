@@ -15,6 +15,8 @@ model User {
   googleId  String?  @unique
   createdAt DateTime @default(now())
 
+  isVerified Boolean @default(false)
+
   passwordResetToken   String?
   passwordResetExpires DateTime?
 
@@ -24,6 +26,17 @@ model User {
   highlightNote HighlightNote?
   weeklyTodos   WeeklyTodo[]
   prSlots       UserPRSlot[]
+}
+
+model Otp {
+  id            String   @id @default(uuid())
+  email         String
+  otp           String   // Hashed
+  expiresAt     DateTime
+  attemptsCount Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([email])
 }
 
 model Profile {
@@ -131,6 +144,7 @@ model Routine {
   name      String
   notes     String?
   isCurrent Boolean  @default(false)
+  currentDay Int @default(1)
   createdAt DateTime @default(now())
 
   exercises RoutineExercise[]
@@ -144,6 +158,7 @@ model RoutineExercise {
   exerciseId String
   exercise   Exercise @relation(fields: [exerciseId], references: [id])
 
+  day Int @default(1)
   order Int
 
   sets RoutineSet[]
