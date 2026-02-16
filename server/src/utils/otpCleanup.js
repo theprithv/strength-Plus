@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import logger from "../config/logger.js";
 
 export const cleanupExpiredOTPs = async () => {
   try {
@@ -9,9 +10,9 @@ export const cleanupExpiredOTPs = async () => {
     });
     
     if (result.count > 0) {
-      console.log(`[CLEANUP] Deleted ${result.count} expired OTP records.`);
+      logger.info(`[CLEANUP] Deleted ${result.count} expired OTP records.`);
     }
   } catch (err) {
-    console.error("[CLEANUP] OTP cleanup error:", err);
+    logger.error(`[CLEANUP] OTP cleanup error: ${err.message}`);
   }
 };

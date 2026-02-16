@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import config from "../config/env.js";
 
 /**
  * Send a password reset email to the user.
@@ -9,20 +10,20 @@ export const sendResetEmail = async (email, resetToken) => {
   // 1. Create a transporter
   // In production, you would use a real service like SendGrid, Mailgun, or Gmail.
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
+    host: config.email.host,
+    port: config.email.port,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: config.email.user,
+      pass: config.email.pass,
     },
   });
 
   // 2. Define the reset link (point to your frontend)
-  const resetLink = `${process.env.CLIENT_URL || "http://localhost:5173"}/login?token=${resetToken}`;
+  const resetLink = `${config.clientUrl}/login?token=${resetToken}`;
 
   // 3. Email contents
   const mailOptions = {
-    from: `"StrengthPlus Support" <${process.env.EMAIL_USER}>`,
+    from: `"StrengthPlus Support" <${config.email.user}>`,
     to: email,
     subject: "Strength+ Password Reset Request",
     html: `
@@ -51,16 +52,16 @@ export const sendResetEmail = async (email, resetToken) => {
  */
 export const sendOTPEmail = async (email, otp) => {
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
+    host: config.email.host,
+    port: config.email.port,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: config.email.user,
+      pass: config.email.pass,
     },
   });
 
   const mailOptions = {
-    from: `"StrengthPlus Support" <${process.env.EMAIL_USER}>`,
+    from: `"StrengthPlus Support" <${config.email.user}>`,
     to: email,
     subject: "Verify your Strength+ Account email address",
     html: `

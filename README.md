@@ -21,6 +21,11 @@ Strength+ is a state-of-the-art web application designed for athletes who demand
 - **Glassmorphism UI**: High-end frosted glass effects and vibrant accent colors.
 - **OLED Optimized**: Deep dark themes with #050505 backgrounds to save battery and look stunning.
 - **Fluid Animations**: Custom cubic-bezier transitions for toasts, menus, and item entries.
+- **Responsive Layout**: Validated against mobile, tablet, and desktop viewports.
+
+### 🤖 AI Integration
+- **Gemini-Powered Insights**: Daily analysis of your training volume and muscle balance.
+- **Smart Recommendations**: Actionable advice based on your workout history.
 
 ## 🛠 Tech Stack
 
@@ -34,6 +39,8 @@ Strength+ is a state-of-the-art web application designed for athletes who demand
 - **Prisma ORM**: Type-safe database management.
 - **PostgreSQL**: Robust relational data storage.
 - **JWT Auth**: Secure user authentication and session management.
+- **Zod**: Strict schema validation for all API inputs.
+- **Winston & Morgan**: Production-grade structured logging.
 
 ## 🚀 Getting Started
 
@@ -53,10 +60,21 @@ Strength+ is a state-of-the-art web application designed for athletes who demand
    ```bash
    cd server
    npm install
-   # Create a .env and add your DATABASE_URL and JWT_SECRET
+   # Create a .env file based on .env.example
+   # Required: DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_ID, GEMINI_API_KEY
    npx prisma migrate dev
    npm start
    ```
+
+### Configuration (.env)
+Ensure your `.env` file includes:
+- `DATABASE_URL`: Connection string for PostgreSQL.
+- `JWT_SECRET`: Secret key for signing tokens.
+- `PORT`: Server port (default: 5000).
+- `NODE_ENV`: `development` or `production`.
+- `GOOGLE_CLIENT_ID`: For Google OAuth.
+- `GEMINI_API_KEY`: For AI insights.
+- `EMAIL_USER` / `EMAIL_PASS`: For sending OTPs.
 
 3. **Setup Client**
    ```bash
@@ -68,5 +86,4 @@ Strength+ is a state-of-the-art web application designed for athletes who demand
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
 Built by [theprithv](https://github.com/theprithv)
