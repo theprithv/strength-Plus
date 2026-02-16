@@ -24,7 +24,7 @@ yarn-error.log*
 Thumbs.db
 
 # Database & Backups
-*.sql
+# *.sql (Removed to allow Prisma migrations)
 *.sqlite
 strengthplus_backup.sql
 

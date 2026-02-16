@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Workout" ADD COLUMN     "endTime" TIMESTAMP(3),
+ADD COLUMN     "isCompleted" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "startTime" TIMESTAMP(3),
+ADD COLUMN     "totalReps" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalSets" INTEGER NOT NULL DEFAULT 0;
