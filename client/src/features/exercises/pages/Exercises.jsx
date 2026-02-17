@@ -14,11 +14,7 @@ const formatLabel = (value = "") =>
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
 export default function Exercises({ pickerMode = false, onSelectExercise }) {
-  const [exercises, setExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
-  const [search, setSearch] = useState("");
-  const [muscle, setMuscle] = useState("all");
-  const [equipment, setEquipment] = useState("all");
   const [activeTab, setActiveTab] = useState("stats");
   const [stats, setStats] = useState({ bestLift: 0, lastPerformed: null });
   const [historyData, setHistoryData] = useState([]);
@@ -34,21 +30,7 @@ export default function Exercises({ pickerMode = false, onSelectExercise }) {
     });
   };
 
-  useEffect(() => {
-    const fetchExercises = async () => {
-      try {
-        const res = await api.get("/exercises");
-        setExercises(res.data || []);
-        setExercisesError(null);
-        if (res.data?.length > 0) {
-          setSelectedExercise(res.data[0]);
-        }
-      } catch {
-        setExercisesError("Failed to load exercises");
-      }
-    };
-    fetchExercises();
-  }, []);
+
 
   useEffect(() => {
     if (selectedExercise) {
@@ -81,20 +63,7 @@ export default function Exercises({ pickerMode = false, onSelectExercise }) {
     }
   }, [selectedExercise, activeTab]);
 
-  const normalize = (value = "") =>
-    value.toString().toLowerCase().replace(/\s+/g, "");
 
-  const filteredExercises = exercises.filter((ex) => {
-    const name = normalize(ex.name);
-    const exMuscle = normalize(ex.primaryMuscle);
-    const exEquipment = normalize(ex.equipment);
-
-    return (
-      name.includes(normalize(search)) &&
-      (muscle === "all" || exMuscle === normalize(muscle)) &&
-      (equipment === "all" || exEquipment === normalize(equipment))
-    );
-  });
 
   return (
     <div

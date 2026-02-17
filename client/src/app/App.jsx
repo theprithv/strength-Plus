@@ -6,6 +6,7 @@ import Workouts from "../features/workouts/pages/Workouts";
 import Routines from "../features/routines/pages/Routines";
 import Exercises from "../features/exercises/pages/Exercises";
 import History from "../features/history/pages/History";
+import { ExerciseProvider } from "../context/ExerciseContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Workout from "../features/workouts/pages/Workout";
 import AppLayout from "../components/layout/AppLayout";
@@ -26,7 +27,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/profile"
         element={

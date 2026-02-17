@@ -115,64 +115,79 @@ const MuscleSetsChart = () => {
         </span>
       </div>
 
-      <div className="chart-container" style={{ width: "100%", height: "auto", minHeight: "150px" }}>
-        <ResponsiveContainer 
-          width="100%" 
-          height={Math.max(chartData.length * 40 + 40, 180)} 
-          minWidth={0} 
-          minHeight={0}
-          debounce={50}
-        >
-          <BarChart
-            layout="vertical"
-            data={chartData}
-            /* Increase right margin and add a small left margin for safety */
-            margin={{ left: 10, right: 60, top: 0, bottom: 0 }}
+      <div className="chart-container" style={{ width: "100%", minHeight: "150px" }}>
+        {chartData.length === 0 ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "150px",
+              color: "#6b7280",
+              fontSize: "14px",
+            }}
           >
-            <XAxis type="number" hide />
-            <YAxis
-              dataKey="label"
-              type="category"
-              tick={{
-                fill: "#9ca3af",
-                fontSize: 13,
-                fontWeight: 400,
-                textAnchor: "start",
-              }}
-              width={85}
-              axisLine={false}
-              tickLine={false}
-              /* Lean labels closer to the bar start point */
-              dx={-80}
-            />
-            <Tooltip
-              content={<CustomTooltip />}
-              cursor={{ fill: "rgba(255,255,255,0.04)" }}
-            />
-            <Bar
-              dataKey="displayValue"
-              radius={[0, 4, 4, 0]}
-              barSize={30}
-              label={renderCustomBarLabel}
-              minPointSize={6}
-              animationDuration={400}
-              activeBar={{
-                fill: "#7dd3fc",
-                stroke: "#7dd3fc",
-                strokeWidth: 1,
-                filter: "drop-shadow(0 0 4px rgba(56, 189, 248, 0.5))", // Soft glow
-              }}
+            No workouts logged
+          </div>
+        ) : (
+          <ResponsiveContainer 
+            width="100%" 
+            height={Math.max(chartData.length * 40 + 40, 180)} 
+            minWidth={0} 
+            minHeight={0}
+            debounce={50}
+          >
+            <BarChart
+              layout="vertical"
+              data={chartData}
+              /* Increase right margin and add a small left margin for safety */
+              margin={{ left: 10, right: 60, top: 0, bottom: 0 }}
             >
-              {chartData.map((entry) => (
-                <Cell
-                  key={`cell-${entry.name}`}
-                  fill="#38bdf8"
-                  style={{ transition: "all 0.5s ease-in-out" }}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+              <XAxis type="number" hide />
+              <YAxis
+                dataKey="label"
+                type="category"
+                tick={{
+                  fill: "#9ca3af",
+                  fontSize: 13,
+                  fontWeight: 400,
+                  textAnchor: "start",
+                }}
+                width={85}
+                axisLine={false}
+                tickLine={false}
+                /* Lean labels closer to the bar start point */
+                dx={-80}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              />
+              <Bar
+                dataKey="displayValue"
+                radius={[0, 4, 4, 0]}
+                barSize={30}
+                label={renderCustomBarLabel}
+                minPointSize={6}
+                animationDuration={400}
+                activeBar={{
+                  fill: "#7dd3fc",
+                  stroke: "#7dd3fc",
+                  strokeWidth: 1,
+                  filter: "drop-shadow(0 0 4px rgba(56, 189, 248, 0.5))", // Soft glow
+                }}
+              >
+                {chartData.map((entry) => (
+                  <Cell
+                    key={`cell-${entry.name}`}
+                    fill="#38bdf8"
+                    style={{ transition: "all 0.5s ease-in-out" }}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

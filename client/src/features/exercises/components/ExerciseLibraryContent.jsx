@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import api from "../../../services/api";
+import { useExerciseContext } from "../../../context/ExerciseContext";
 import Dropdown from "../../../components/layout/Dropdown";
 import "../styles/Exercises.css";
 import AddExerciseModal from "./AddExerciseModal";
+import ExerciseCard from "./ExerciseCard";
 
 const MUSCLES = [
   "abdominals",
@@ -43,7 +45,7 @@ export default function ExerciseLibraryContent({
   pickerMode = false,
   onSelectExercise,
 }) {
-  const [exercises, setExercises] = useState([]);
+  const { exercises, fetchExercises, refreshExercises, loading, hasMore, totalCount } = useExerciseContext();
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [search, setSearch] = useState("");
   const [muscle, setMuscle] = useState("all");
@@ -51,29 +53,88 @@ export default function ExerciseLibraryContent({
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
 
+  // Initial load
   useEffect(() => {
-    const fetchExercises = async () => {
-      const res = await api.get("/exercises");
-      setExercises(res.data);
-      if (res.data.length > 0) setSelectedExercise(res.data[0]);
+    if (exercises.length === 0) {
+      refreshExercises(); 
+    }
+  }, []); 
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          fetchExercises(false); // Load next page
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    const trigger = document.getElementById("scroll-trigger");
+    if (trigger) observer.observe(trigger);
+
+    return () => {
+      if (trigger) observer.unobserve(trigger);
     };
-    fetchExercises();
+  }, [hasMore, loading]);
+
+  // Set selected exercise once exercises are loaded
+  useEffect(() => {
+    // Only auto-select if NOT in picker mode (Workouts page)
+    if (!pickerMode && exercises.length > 0 && !selectedExercise) {
+      const first = exercises[0];
+      setSelectedExercise(first);
+      if (onSelectExercise) {
+        onSelectExercise(first);
+      }
+    }
+  }, [pickerMode, exercises, selectedExercise, onSelectExercise]);
+
+  // Optimize Filtering with memoization
+  const filteredExercises = useMemo(() => {
+    const normSearch = search.trim().toLowerCase();
+    const normMuscle = muscle === "all" ? null : muscle.toLowerCase();
+    const normEquipment = equipment === "all" ? null : equipment.toLowerCase();
+    
+    // If no filters, return raw list (fast path)
+    if (!normSearch && !normMuscle && !normEquipment) {
+      return exercises;
+    }
+
+    return exercises.filter((ex) => {
+      // Inline normalization for speed
+      const matchesSearch = !normSearch || ex.name.toLowerCase().includes(normSearch);
+      const matchesMuscle = !normMuscle || ex.primaryMuscle.toLowerCase() === normMuscle;
+      const matchesEquipment = !normEquipment || ex.equipment.toLowerCase() === normEquipment;
+
+      return matchesSearch && matchesMuscle && matchesEquipment;
+    });
+  }, [exercises, search, muscle, equipment]);
+
+  // Stable Callbacks for Card Actions
+  const handleSelect = useCallback((ex) => {
+    setSelectedExercise(ex);
+    if (onSelectExercise) {
+      onSelectExercise(ex);
+    }
+  }, [onSelectExercise]);
+
+  const handleEdit = useCallback((ex) => {
+    setEditTarget(ex);
+    setShowModal(true);
   }, []);
 
-  const normalize = (value = "") =>
-    value.toString().toLowerCase().replace(/\s+/g, "");
-
-  const filteredExercises = exercises.filter((ex) => {
-    const name = normalize(ex.name);
-    const exMuscle = normalize(ex.primaryMuscle);
-    const exEquipment = normalize(ex.equipment);
-
-    return (
-      name.includes(normalize(search)) &&
-      (muscle === "all" || exMuscle === normalize(muscle)) &&
-      (equipment === "all" || exEquipment === normalize(equipment))
-    );
-  });
+  const handleDelete = useCallback(async (ex) => {
+    if (!window.confirm("Delete this exercise?")) return;
+    try {
+      await api.delete(`/exercises/${ex.id}`);
+      refreshExercises();
+      setSelectedExercise(null);
+    } catch (err) {
+      alert("Cannot delete exercise in use");
+    }
+  }, [refreshExercises]);
 
   return (
     <>
@@ -107,95 +168,30 @@ export default function ExerciseLibraryContent({
       </div>
 
       <div className="library-list">
-        <p style={{ color: "#888" }}>
-          Total: {filteredExercises.length} exercises
+        <p style={{ color: "#888", marginBottom: "10px" }}>
+          Total: {totalCount} exercises
         </p>
 
         {filteredExercises.map((ex) => (
-          <div
+          <ExerciseCard
             key={ex.id}
-            className={`exercise-card ${
-              selectedExercise?.id === ex.id ? "active" : ""
-            }`}
-            onClick={() => {
-              setSelectedExercise(ex);
-
-              // If parent passed a callback, always notify it
-              if (onSelectExercise) {
-                onSelectExercise(ex);
-              }
-            }}
-          >
-            <div className="exercise-thumb">
-              {ex.isCustom && <img src="/assets/images/s+.png" alt="Strength+" />}
-            </div>
-            <div className="exercise-meta">
-              <div className="exercise-name">
-                {ex.name}
-
-                {!pickerMode && ex.isCustom && (
-                  <span className="exercise-actions">
-                    <button
-                      className="exercise-action-btn edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditTarget(ex);
-                        setShowModal(true);
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                      </svg>
-                    </button>
-
-                    <button
-                      className="exercise-action-btn delete"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-
-                        if (!window.confirm("Delete this exercise?")) return;
-
-                        try {
-                          await api.delete(`/exercises/${ex.id}`);
-
-                          const res = await api.get("/exercises");
-                          setExercises(res.data);
-                          setSelectedExercise(null);
-                        } catch (err) {
-                          alert("Cannot delete exercise in use");
-                        }
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M6 7h12l-1 14H7L6 7zm3-4h6l1 2H8l1-2z"></path>
-                      </svg>
-                    </button>
-                  </span>
-                )}
-              </div>
-
-              <div className="exercise-muscle">{ex.primaryMuscle}</div>
-            </div>
-          </div>
+            ex={ex}
+            isSelected={selectedExercise?.id === ex.id}
+            pickerMode={pickerMode}
+            onSelect={handleSelect}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ))}
+        
+        {/* Infinite Scroll Trigger */}
+        {hasMore && !loading && (
+           <div id="scroll-trigger" style={{ height: "20px", margin: "10px 0" }}></div>
+        )}
+        
+        {loading && <p style={{ textAlign: "center", padding: "10px" }}>Loading more...</p>}
       </div>
+      
       {showModal && (
         <AddExerciseModal
           editExercise={editTarget}
@@ -204,8 +200,7 @@ export default function ExerciseLibraryContent({
             setEditTarget(null);
           }}
           onAdd={async () => {
-            const res = await api.get("/exercises");
-            setExercises(res.data);
+             refreshExercises();
           }}
         />
       )}

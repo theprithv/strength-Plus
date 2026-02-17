@@ -4,7 +4,21 @@ import logger from "../config/logger.js";
 export const getExercises = async (req, res) => {
   try {
     const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
 
+    // 1. Get Total Count
+    const totalCount = await prisma.exercise.count({
+      where: {
+        OR: [
+          { isCustom: false, isDeprecated: false },
+          { isCustom: true, createdByUserId: userId },
+        ],
+      },
+    });
+
+    // 2. Get Paginated Exercises
     const exercises = await prisma.exercise.findMany({
       where: {
         OR: [
@@ -13,6 +27,8 @@ export const getExercises = async (req, res) => {
         ],
       },
       orderBy: { name: "asc" },
+      skip: skip,
+      take: limit,
       select: {
         id: true,
         name: true,
@@ -21,21 +37,16 @@ export const getExercises = async (req, res) => {
         imageUrl: true,
         isCustom: true,
         createdByUserId: true,
-        secondaryMuscles: true, // Needed for filtering? Implementation plan said maybe remove, but let's keep for now as frontend filters by it? No, frontend filters by primary muscle/equipment. Let's check frontend.
-        // Checking frontend: It filters by primaryMuscle and equipment. Secondary is not used for filter.
-        // It DOES use secondary muscles though? Wait, looking at ExerciseLibraryContent.jsx:
-        // const exMuscle = normalize(ex.primaryMuscle);
-        // It only checks primaryMuscle.
-        // So I can remove secondaryMuscles safely to save space?
-        // Wait, does the card show it? "exercise-muscle" shows primaryMuscle.
-        // So strictly speaking, secondaryMuscles is NOT used in the library view!
-        // isCustom: true is needed.
-        // createdByUserId: true is needed? Not really for display, but logic might use it.
-        // keeping minimal fields.
+        secondaryMuscles: true,
       },
     });
 
-    res.json(exercises);
+    res.json({
+      exercises,
+      totalCount,
+      hasNextPage: skip + exercises.length < totalCount,
+      currentPage: page
+    });
   } catch (err) {
     logger.error(`Get exercises error: ${err.message}`);
     res.status(500).json({ error: err.message });

@@ -10,6 +10,21 @@ export const startWorkout = async (req, res) => {
       return res.status(400).json({ error: "splitName is required" });
     }
 
+    // 0️⃣ Safety Check: If active workout exists, return it instead of creating new
+    const existing = await prisma.workout.findFirst({
+      where: { userId, isCompleted: false },
+      include: {
+        exercises: {
+          orderBy: { order: "asc" },
+          include: { exercise: true, sets: true },
+        },
+      },
+    });
+
+    if (existing) {
+       return res.status(200).json(existing);
+    }
+
     // 1️⃣ Create the workout session
     const workout = await prisma.workout.create({
       data: {
@@ -31,7 +46,11 @@ export const startWorkout = async (req, res) => {
 
     // 3️⃣ If routine exists → copy its structure into workout
     if (currentRoutine) {
-      for (const routineExercise of currentRoutine.exercises) {
+      const daySpecificExercises = currentRoutine.exercises.filter(
+        (ex) => ex.day === currentRoutine.currentDay
+      );
+
+      for (const routineExercise of daySpecificExercises) {
         const workoutExercise = await prisma.workoutExercise.create({
           data: {
             workoutId: workout.id,
@@ -66,6 +85,15 @@ export const addExerciseToWorkout = async (req, res) => {
   try {
     const { workoutId } = req.params;
     const { exerciseId, order } = req.body;
+
+    // 0️⃣ Check for duplicates
+    const existing = await prisma.workoutExercise.findFirst({
+      where: { workoutId, exerciseId },
+    });
+
+    if (existing) {
+      return res.status(400).json({ error: "Exercise already in workout" });
+    }
 
     const count = await prisma.workoutExercise.count({
       where: { workoutId },
@@ -178,6 +206,16 @@ export const finishWorkout = async (req, res) => {
       },
     });
 
+    // 🛑 VALIDATION: Check if session is empty
+    const hasValidSets = cleanedWorkout.exercises.length > 0 && 
+      cleanedWorkout.exercises.some(ex => ex.sets.length > 0);
+
+    if (!hasValidSets) {
+      // Delete the empty/invalid session entirely
+      await prisma.workout.delete({ where: { id: workoutId } });
+      return res.status(200).json({ message: "Empty session discarded" });
+    }
+
     let totalVolume = 0;
     let totalSets = 0;
     let totalReps = 0;
@@ -225,7 +263,8 @@ export const finishWorkout = async (req, res) => {
 
 export const getActiveWorkout = async (req, res) => {
   try {
-    const workout = await prisma.workout.findFirst({
+    // 🔍 Find ALL active workouts
+    const activeWorkouts = await prisma.workout.findMany({
       where: {
         userId: req.user.id,
         isCompleted: false,
@@ -243,7 +282,32 @@ export const getActiveWorkout = async (req, res) => {
       },
     });
 
-    res.json(workout || null);
+    if (activeWorkouts.length === 0) {
+      return res.json(null);
+    }
+
+    // ✅ Keep the newest one
+    const currentCallback = activeWorkouts[0];
+
+    // 🧹 Auto-close any *older* ghost sessions (Self-Healing)
+    if (activeWorkouts.length > 1) {
+      const idsToClose = activeWorkouts.slice(1).map((w) => w.id);
+      await prisma.workout.updateMany({
+        where: { id: { in: idsToClose } },
+        data: { 
+          isCompleted: true, 
+          endTime: new Date(),
+          notes: "Auto-closed duplicate session" 
+        },
+      });
+      logger.info(`[Self-Heal] Closed ${idsToClose.length} ghost sessions for user ${req.user.id}`);
+    }
+
+    const start = new Date(currentCallback.startTime || currentCallback.createdAt).getTime();
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - start) / 1000);
+    
+    res.json({ ...currentCallback, elapsedSeconds });
   } catch (err) {
     logger.error(`Restore session failed: ${err.message}`);
     res.status(500).json({ error: "Failed to restore session" });

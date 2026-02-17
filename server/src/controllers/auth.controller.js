@@ -275,8 +275,14 @@ export const sendOTP = async (req, res) => {
     const hashedOtp = await hashOTP(otp);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    // 4. Update/Create OTP record (invalidate old ones)
-    await prisma.otp.deleteMany({ where: { email: trimmedEmail } });
+    // 4. Update/Create OTP record (invalidate only expired ones to keep rate limits active)
+    await prisma.otp.deleteMany({ 
+      where: { 
+        email: trimmedEmail, 
+        expiresAt: { lt: new Date() } 
+      } 
+    });
+    
     await prisma.otp.create({
       data: {
         email: trimmedEmail,

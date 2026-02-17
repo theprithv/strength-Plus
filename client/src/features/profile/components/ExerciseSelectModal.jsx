@@ -7,13 +7,17 @@ export default function ExerciseSelectModal({ isOpen, onClose, onSelect }) {
 
   useEffect(() => {
     if (isOpen) {
-      getExercises().then((res) => setExercises(res || []));
+      getExercises().then((res) => {
+        // Handle pagination object { exercises: [], ... } or direct array
+        setExercises(res.exercises || res || []);
+      });
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const filtered = exercises.filter((ex) =>
+  const exerciseList = Array.isArray(exercises) ? exercises : [];
+  const filtered = exerciseList.filter((ex) =>
     ex.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

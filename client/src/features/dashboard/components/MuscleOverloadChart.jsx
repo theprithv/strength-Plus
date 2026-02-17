@@ -199,55 +199,70 @@ const MuscleOverloadChart = () => {
         className="chart-container"
         style={{ height: "270px", marginTop: "10px", paddingLeft: "4px" }}
       >
-        <ResponsiveContainer width="100%" height={270} minWidth={0} minHeight={0} debounce={50}>
-          <AreaChart
-            data={data}
-            margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+        {data.length === 0 || data.every((item) => item.score === 0) ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              color: "#6b7280",
+              fontSize: "14px",
+            }}
           >
-            <defs>
-              <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="dateLabel" // Maps to "Jan 1" or "Nov"
-              stroke="#4b5563"
-              fontSize={13.5}
-              tickLine={false}
-              axisLine={true}
-              tickMargin={12.5}
-              padding={{ left: 20, right: 20 }}
-            />
-            {/* Normalized Score Axis (0-100) */}
-            <YAxis
-              domain={["auto", "auto"]}
-              stroke="#4b5563"
-              fontSize={13.5}
-              tickLine={false}
-              axisLine={true}
-              width={30}
-              tickFormatter={(val) => `${val}kg`}
-              padding={{ top: 10, bottom: 10 }}
-            />
-            <Tooltip content={<CustomTooltip range={range} />} />
-            <Area
-              type="linear"
-              dataKey="score"
-              stroke="#38bdf8"
-              strokeWidth={3}
-              fillOpacity={1}
-              fill="url(#colorScore)"
-              dot={{ r: 4, fill: "#38bdf8", strokeWidth: 0 }}
-              activeDot={{
-                r: 6,
-                fill: "#fff",
-                stroke: "#38bdf8",
-                strokeWidth: 2,
-              }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+            No workouts logged
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={270} minWidth={0} minHeight={0} debounce={50}>
+            <AreaChart
+              data={data}
+              margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+            >
+              <defs>
+                <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="dateLabel" // Maps to "Jan 1" or "Nov"
+                stroke="#4b5563"
+                fontSize={13.5}
+                tickLine={false}
+                axisLine={true}
+                tickMargin={12.5}
+                padding={{ left: 20, right: 20 }}
+              />
+              {/* Normalized Score Axis (0-100) */}
+              <YAxis
+                domain={["auto", "auto"]}
+                stroke="#4b5563"
+                fontSize={13.5}
+                tickLine={false}
+                axisLine={true}
+                width={30}
+                tickFormatter={(val) => `${val}kg`}
+                padding={{ top: 10, bottom: 10 }}
+              />
+              <Tooltip content={<CustomTooltip range={range} />} />
+              <Area
+                type="linear"
+                dataKey="score"
+                stroke="#38bdf8"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#colorScore)"
+                dot={{ r: 4, fill: "#38bdf8", strokeWidth: 0 }}
+                activeDot={{
+                  r: 6,
+                  fill: "#fff",
+                  stroke: "#38bdf8",
+                  strokeWidth: 2,
+                }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

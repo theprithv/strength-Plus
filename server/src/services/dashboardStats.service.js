@@ -238,40 +238,36 @@ export async function getMuscleBalance(userId, range = "week") {
 }
 
 export async function getDashboardStats(userId) {
-  const workouts = await prisma.workout.findMany({
+  // 1. Get Total Workouts (Count only)
+  const totalWorkouts = await prisma.workout.count({
     where: {
       userId,
       isCompleted: true,
     },
-    select: {
-      exercises: {
-        select: {
-          sets: {
-            select: {
-              reps: true,
-            },
-          },
+  });
+
+  // 2. Get Total Sets & Reps (Database Aggregation)
+  const stats = await prisma.setLog.aggregate({
+    _count: {
+      id: true, // Total Sets
+    },
+    _sum: {
+      reps: true, // Total Reps
+    },
+    where: {
+      workoutExercise: {
+        workout: {
+          userId,
+          isCompleted: true,
         },
       },
     },
   });
 
-  let totalSets = 0;
-  let totalReps = 0;
-
-  for (const workout of workouts) {
-    for (const ex of workout.exercises) {
-      for (const set of ex.sets) {
-        totalSets++;
-        totalReps += set.reps;
-      }
-    }
-  }
-
   return {
-    totalWorkouts: workouts.length,
-    totalSets,
-    totalReps,
+    totalWorkouts,
+    totalSets: stats._count.id || 0,
+    totalReps: stats._sum.reps || 0,
   };
 }
 

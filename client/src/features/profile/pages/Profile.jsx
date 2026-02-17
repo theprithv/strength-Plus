@@ -65,28 +65,24 @@ export default function Profile() {
       }
       // === FIX END ===
 
-      if (data?.profile?.prSlots) {
+      // ⚡ OPTIMIZATION: Use pre-fetched PRs from backend (N+1 fix)
+      if (data?.profile?.prDetails) {
         const prDetails = {};
-        await Promise.all(
-          data.profile.prSlots.map(async (slot) => {
-            if (slot.exerciseId) {
-              try {
-                const prRes = await getExercisePR(slot.exerciseId);
-                const weight = prRes?.weight || 0;
-                const dateRaw = prRes?.date;
+        const preFetched = data.profile.prDetails;
 
-                prDetails[slot.exerciseId] = {
-                  weight: weight,
-                  date: dateRaw
-                    ? new Date(dateRaw).toLocaleDateString("en-GB")
-                    : "No Record",
-                };
-              } catch (err) {
-                console.error(`Error fetching PR`, err);
-              }
-            }
-          }),
-        );
+        data.profile.prSlots.forEach((slot) => {
+           if (slot.exerciseId && preFetched[slot.exerciseId]) {
+              const rec = preFetched[slot.exerciseId];
+              prDetails[slot.exerciseId] = {
+                weight: rec.weight,
+                date: rec.date 
+                  ? new Date(rec.date).toLocaleDateString("en-GB")
+                  : "No Record"
+              };
+           } else if (slot.exerciseId) {
+             prDetails[slot.exerciseId] = { weight: 0, date: "No Record" };
+           }
+        });
         setPrWeights(prDetails);
       }
     } catch (err) {
@@ -152,26 +148,7 @@ export default function Profile() {
     }
   };
 
-  if (!userData) {
-    return (
-      <div className="profile-container skeleton-page">
-        <div className="profile-main-content">
-          <section className="profile-hero glass-panel skeleton-hero">
-            <div className="profile-avatar skeleton skeleton-circle"></div>
-            <div className="hero-info">
-              <div className="skeleton skeleton-title" style={{ width: '180px' }}></div>
-              <div className="skeleton skeleton-text" style={{ width: '250px' }}></div>
-            </div>
-          </section>
-          <div className="stats-snapshot">
-            {[1, 2, 3].map(i => <div key={i} className="stat-card glass-panel skeleton" style={{ height: '80px' }}></div>)}
-          </div>
-          <div className="glass-panel skeleton" style={{ height: '200px' }}></div>
-        </div>
-        <div className="profile-right-panel glass-panel skeleton"></div>
-      </div>
-    );
-  }
+  if (!userData) return null;
 
   const { name, prSlots, profile } = userData.profile;
 
@@ -394,19 +371,7 @@ export default function Profile() {
           </div>
 
           <div className="duration-chart-wrapper">
-            {isLoadingDuration ? (
-              <div className="skeleton-chart-overlay">
-                <div className="skeleton-graph-bars">
-                  {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                    <div
-                      key={i}
-                      className="skeleton skeleton-bar"
-                      style={{ height: `${20 + Math.random() * 60}%` }}
-                    ></div>
-                  ))}
-                </div>
-              </div>
-            ) : (
+            {/* Removed skeleton */}
               <>
                 <div className="duration-y-axis">
                   {yLabels.map((label, idx) => (
@@ -438,7 +403,6 @@ export default function Profile() {
                   })}
                 </div>
               </>
-            )}
           </div>
         </section>
       </div>

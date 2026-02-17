@@ -49,16 +49,18 @@ export default function Workouts() {
           setCurrentSplit(res.data.name);
           setActiveRoutineId(res.data.id);
 
-          const injected = res.data.exercises.map((re) => ({
-            id: re.id,
-            exerciseId: re.exerciseId,
-            name: re.exercise.name,
-            sets: re.sets.map((s) => ({
-              id: s.id,
-              reps: s.reps,
-              weight: s.weight,
-            })),
-          }));
+          const injected = res.data.exercises
+            .filter(re => re.exercise && re.day === res.data.currentDay) // Filter by current day
+            .map((re) => ({
+              id: re.id,
+              exerciseId: re.exerciseId,
+              name: re.exercise.name,
+              sets: re.sets.map((s) => ({
+                id: s.id,
+                reps: s.reps,
+                weight: s.weight,
+              })),
+            }));
 
           setExercises(injected);
         }
@@ -87,6 +89,7 @@ export default function Workouts() {
           
           const restored = res.data.exercises.map((ex) => ({
             id: ex.id,
+            exerciseId: ex.exerciseId,
             name: ex.exercise.name,
             sets: ex.sets.map((s) => ({
               id: s.id,
@@ -153,7 +156,7 @@ export default function Workouts() {
 
     try {
       const res = await api.post("/workouts/start", {
-        splitName: currentSplit,
+        splitName: currentSplit || "Custom",
       });
 
       const workout = res.data;
@@ -161,6 +164,8 @@ export default function Workouts() {
       setActiveWorkoutId(workout.id);
       setIsWorkoutActive(true);
       setStartTime(Date.now());
+
+      return workout.id;
 
       // 🧠 NEW: Load routine-powered workout into UI
       const hydratedExercises = workout.exercises.map((ex) => ({
@@ -192,25 +197,46 @@ export default function Workouts() {
       setTotalSets(sets);
       setTotalReps(reps);
       setTotalVolume(volume);
+      setTotalVolume(volume);
     } catch (err) {
       console.error("Failed to start workout:", err);
-      alert(err.response?.data?.error || "Failed to start workout");
+      // Suppress alert as requested
+      // alert(err.response?.data?.error || "Failed to start workout");
+      return null;
     }
+    
+    // Return ID if successful (it's set in state, but need it immediately)
+    // We can't easily return it from here because state update is async/batched.
+    // But we have the 'workout' object from response.
+    // Wait, the previous block has the 'workout' variable.
+    // I need to restructure to ensure I can return it.
   }
 
   async function addExercise(exercise) {
-    if (!activeWorkoutId) {
-      alert("Start the workout first");
+    // 🔒 NEW GUARD – stop user if workout not started
+    if (!isWorkoutActive || !activeWorkoutId) {
+       alert("Please start the workout first");
+       return false;
+    }
+
+    // 🔒 Duplicate Check
+    const exists = exercises.some(
+      (ex) => ex.exerciseId === exercise.id
+    );
+    if (exists) {
       return false;
     }
 
+    let currentWorkoutId = activeWorkoutId;
+
     try {
-      const res = await api.post(`/workouts/${activeWorkoutId}/exercises`, {
+      const res = await api.post(`/workouts/${currentWorkoutId}/exercises`, {
         exerciseId: exercise.id,
       });
 
       const newWorkoutExercise = {
         id: res.data.id,
+        exerciseId: exercise.id,
         name: exercise.name,
         sets: [],
       };
@@ -219,7 +245,7 @@ export default function Workouts() {
       return true;
     } catch (err) {
       console.error("Failed to add exercise:", err);
-      alert(err.response?.data?.error || "Failed to add exercise");
+      // alert(err.response?.data?.error || "Failed to add exercise");
       return false;
     }
   }

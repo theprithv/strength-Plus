@@ -88,7 +88,7 @@ function AddExerciseModal({ onClose, onAdd, editExercise = null }) {
             <div className="branding-circle">
               <img src={logo} alt="Strength+" className="app-logo-preview" />
             </div>
-            <p className="branding-text">Precision engineering for your ultimate routine</p>
+            <p className="branding-text">Build exercises tailored to your training style.</p>
           </div>
 
           <label>Exercise Name</label>

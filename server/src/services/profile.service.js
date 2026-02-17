@@ -1,7 +1,7 @@
 import prisma from "../config/prisma.js";
 
-export const getProfileByUserId = (userId) => {
-  return prisma.user.findUnique({
+export const getProfileByUserId = async (userId) => {
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -10,9 +10,44 @@ export const getProfileByUserId = (userId) => {
       profile: true,
       prSlots: {
         include: { exercise: true },
+        orderBy: { slotIndex: "asc" },
       },
     },
   });
+
+  if (!user || !user.prSlots.length) return user;
+
+  // ⚡ Optimization: Batch fetch PRs for all configured slots
+  const exerciseIds = user.prSlots
+    .filter((slot) => slot.exerciseId)
+    .map((slot) => slot.exerciseId);
+
+
+  if (exerciseIds.length === 0) return user;
+
+  const prDetails = {};
+  
+  // Parallel fetch for PR details (max 3 slots)
+  await Promise.all(
+    exerciseIds.map(async (exId) => {
+      const best = await prisma.setLog.findFirst({
+        where: {
+          workoutExercise: { exerciseId: exId, workout: { userId, isCompleted: true } }
+        },
+        orderBy: [{ weight: "desc" }],
+        select: { weight: true, createdAt: true },
+      });
+      
+      if (best) {
+        prDetails[exId] = {
+          weight: best.weight,
+          date: best.createdAt,
+        };
+      }
+    })
+  );
+
+  return { ...user, prDetails }; // Attach pre-fetched PRs
 };
 
 export const updateProfileByUserId = (userId, data) => {

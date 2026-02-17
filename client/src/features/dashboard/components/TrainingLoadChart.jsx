@@ -69,12 +69,19 @@ const TrainingLoadChart = () => {
         className="chart-container"
         style={{ width: "100%", height: "260px", position: "relative" }}
       >
-        {data.length === 0 ? (
+        {data.length === 0 || data.every((item) => item.load === 0) ? (
           <div
             className="chart-placeholder"
-            style={{ textAlign: "center", paddingTop: "100px" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              color: "#6b7280",
+              fontSize: "14px",
+            }}
           >
-            No training data yet
+            No workouts logged
           </div>
         ) : (
           /* FIX: We use a fixed height number (300) here to guarantee the chart renders */

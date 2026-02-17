@@ -29,7 +29,14 @@ export const AuthProvider = ({ children }) => {
       if (res.data) {
         setIsWorkoutActive(true);
         setActiveWorkoutId(res.data.id);
-        setWorkoutStartTime(new Date(res.data.startTime || res.data.createdAt).getTime());
+        
+        // Sync timer with server duration to avoid clock drift issues
+        if (res.data.elapsedSeconds !== undefined) {
+          setWorkoutStartTime(Date.now() - (res.data.elapsedSeconds * 1000));
+        } else {
+          // Fallback
+          setWorkoutStartTime(new Date(res.data.startTime || res.data.createdAt).getTime());
+        }
       } else {
         setIsWorkoutActive(false);
         setActiveWorkoutId(null);
