@@ -4,7 +4,7 @@ import { generateOTP } from "../src/utils/otpUtils.js";
 import logger from "../src/config/logger.js";
 
 async function testEmail() {
-  const testEmail = "test@example.com";
+  const testEmail = "strength.pluss@gmail.com";
   const otp = generateOTP();
 
   logger.info(`Attempting to send OTP ${otp} to ${testEmail}...`);
