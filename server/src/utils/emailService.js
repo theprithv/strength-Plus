@@ -1,5 +1,7 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import config from "../config/env.js";
+
+const resend = new Resend(config.resendApiKey);
 
 /**
  * Send a password reset email to the user.
@@ -7,23 +9,11 @@ import config from "../config/env.js";
  * @param {string} resetToken - The plain-text reset token
  */
 export const sendResetEmail = async (email, resetToken) => {
-  // 1. Create a transporter
-  // In production, you would use a real service like SendGrid, Mailgun, or Gmail.
-  const transporter = nodemailer.createTransport({
-    host: config.email.host,
-    port: config.email.port,
-    auth: {
-      user: config.email.user,
-      pass: config.email.pass,
-    },
-  });
-
-  // 2. Define the reset link (point to your frontend)
+  // Define the reset link (point to your frontend)
   const resetLink = `${config.clientUrl}/login?token=${resetToken}`;
 
-  // 3. Email contents
-  const mailOptions = {
-    from: `"StrengthPlus Support" <${config.email.user}>`,
+  const { error } = await resend.emails.send({
+    from: "onboarding@resend.dev",
     to: email,
     subject: "Strength+ Password Reset Request",
     html: `
@@ -39,10 +29,11 @@ export const sendResetEmail = async (email, resetToken) => {
         <p style="color: #9ca3af; font-size: 12px;">Strength+ — Precision Strength Tracking</p>
       </div>
     `,
-  };
+  });
 
-  // 4. Send the email
-  await transporter.sendMail(mailOptions);
+  if (error) {
+    throw new Error(`Resend API Error: ${error.message}`);
+  }
 };
 
 /**
@@ -51,17 +42,8 @@ export const sendResetEmail = async (email, resetToken) => {
  * @param {string} otp - The 6-digit OTP
  */
 export const sendOTPEmail = async (email, otp) => {
-  const transporter = nodemailer.createTransport({
-    host: config.email.host,
-    port: config.email.port,
-    auth: {
-      user: config.email.user,
-      pass: config.email.pass,
-    },
-  });
-
-  const mailOptions = {
-    from: `"StrengthPlus Support" <${config.email.user}>`,
+  const { error } = await resend.emails.send({
+    from: "onboarding@resend.dev",
     to: email,
     subject: "Verify your Strength+ Account email address",
     html: `
@@ -94,7 +76,9 @@ export const sendOTPEmail = async (email, otp) => {
         </div>
       </div>
     `,
-  };
+  });
 
-  await transporter.sendMail(mailOptions);
+  if (error) {
+    throw new Error(`Resend API Error: ${error.message}`);
+  }
 };

@@ -28,12 +28,7 @@ const config = {
   geminiApiKey: process.env.GEMINI_API_KEY,
 
   // Email (SMTP)
-  email: {
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT, 10) || 587,
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+  resendApiKey: process.env.RESEND_API_KEY,
 };
 
 export default config;
