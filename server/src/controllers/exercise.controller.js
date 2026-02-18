@@ -6,26 +6,35 @@ export const getExercises = async (req, res) => {
     const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
+    const search = req.query.search || "";
     const skip = (page - 1) * limit;
 
-    // 1. Get Total Count
-    const totalCount = await prisma.exercise.count({
-      where: {
-        OR: [
-          { isCustom: false, isDeprecated: false },
-          { isCustom: true, createdByUserId: userId },
-        ],
-      },
-    });
+    const where = {
+      AND: [
+        {
+          OR: [
+            { isCustom: false, isDeprecated: false },
+            { isCustom: true, createdByUserId: userId },
+          ],
+        },
+      ],
+    };
 
-    // 2. Get Paginated Exercises
+    if (search) {
+      where.AND.push({
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      });
+    }
+
+    // 1. Get Total Count
+    const totalCount = await prisma.exercise.count({ where });
+
+    // 2. Get Exercises
     const exercises = await prisma.exercise.findMany({
-      where: {
-        OR: [
-          { isCustom: false, isDeprecated: false },
-          { isCustom: true, createdByUserId: userId },
-        ],
-      },
+      where,
       orderBy: { name: "asc" },
       skip: skip,
       take: limit,

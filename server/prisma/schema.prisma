@@ -16,28 +16,12 @@ model User {
   googleId  String?  @unique
   createdAt DateTime @default(now())
 
-  isVerified Boolean @default(false)
-
-  passwordResetToken   String?
-  passwordResetExpires DateTime?
-
   profile       Profile?
   workouts      Workout[]
   routines      Routine[]
   highlightNote HighlightNote?
   weeklyTodos   WeeklyTodo[]
   prSlots       UserPRSlot[]
-}
-
-model Otp {
-  id            String   @id @default(uuid())
-  email         String
-  otp           String   // Hashed
-  expiresAt     DateTime
-  attemptsCount Int      @default(0)
-  createdAt     DateTime @default(now())
-
-  @@index([email])
 }
 
 model Profile {
@@ -113,6 +97,8 @@ model Workout {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([userId, startTime])
+  @@index([userId, createdAt])
 }
 
 model WorkoutExercise {
@@ -143,6 +129,9 @@ model SetLog {
   workoutExercise WorkoutExercise @relation(fields: [workoutExerciseId], references: [id])
 
   @@index([workoutExerciseId])
+  @@index([workoutExerciseId, weight(sort: Desc)])
+  @@index([workoutExerciseId, reps(sort: Desc)])
+  @@index([createdAt])
 }
 
 model Routine {
@@ -190,10 +179,12 @@ model RoutineSet {
 }
 
 model UserDailyInsight {
-  userId    String   @id
+  userId    String
   date      String   // YYYY-MM-DD
   insights  Json
   updatedAt DateTime @updatedAt
+
+  @@id([userId, date])
 }
 
 model HighlightNote {
@@ -234,4 +225,5 @@ model UserPRSlot {
   @@unique([userId, slotIndex], name: "userId_slotIndex")
   @@index([userId])
   @@index([exerciseId])
+  @@index([userId, exerciseId])
 }

@@ -1,6 +1,7 @@
 import prisma from "../config/prisma.js";
 import config from "../config/env.js";
 import logger from "../config/logger.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const FALLBACK_INSIGHTS = [
   "Training analysis is temporarily unavailable today.",
@@ -16,11 +17,11 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
   const today = new Date().toISOString().slice(0, 10);
 
   // 1. Check persisted daily insights (restart-safe)
-  const existing = await prisma.userDailyInsight.findUnique({
-    where: { userId },
+  const existing = await prisma.userDailyInsight.findFirst({
+    where: { userId, date: today },
   });
 
-  if (!forceRegen && existing && existing.date === today) {
+  if (!forceRegen && existing) {
     return { status: "ready", insights: existing.insights };
   }
 
@@ -60,8 +61,8 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
         };
       }
 
-      muscles[muscle].sets += we.sets || 0;
-      muscles[muscle].reps += we.reps || 0;
+      muscles[muscle].sets += we.sets?.length || 0;
+      muscles[muscle].reps += (we.sets || []).reduce((sum, s) => sum + (s.reps || 0), 0);
       muscles[muscle].sessions.add(w.id);
 
       if (w.date > muscles[muscle].lastTrained) {
@@ -76,11 +77,11 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
 
   const payload = {
     month: `${now.getFullYear()}-${now.getMonth() + 1}`,
-    muscles,
+    muscles: Object.keys(muscles).length > 0 ? muscles : "No training data found for this period.",
   };
 
   // 3. Gemini call
-  let insights;
+  let insights = [];
   try {
     const genAI = new GoogleGenerativeAI(config.geminiApiKey);
     const model = genAI.getGenerativeModel({
@@ -90,74 +91,60 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
     const prompt = `
 You are a professional strength training analyst.
 
-Analyze the MONTHLY muscle-level training data below.
+Analyze the training data below for this month. 
 
-OUTPUT FORMAT (STRICT — FOLLOW EXACTLY):
-
+OUTPUT FORMAT (STRICT):
 Return EXACTLY 3 insights.
-Each insight MUST be approximately 2 short lines.
-Each insight MUST be separated by the token: <INSIGHT>
+Each insight MUST be 1-2 short lines.
+Separate insights with the token: <INSIGHT>
 
 Rules:
-- Base everything ONLY on the provided data
-- Each insight must cover a DIFFERENT idea
-- Across all three insights, cover:
-  • training balance or imbalance
-  • frequency or recovery patterns
-  • one actionable adjustment
-- Do NOT merge ideas
-- Do NOT use numbering, bullets, titles, or markdown
-- Do NOT explain the format
-- Plain text only
-
-If data is limited, still produce three cautious insights based on what exists.
+- Give technical, actionable feedback.
+- Do not use markdown (no bold, no bullets).
+- Do not explain yourself.
 
 DATA:
 ${JSON.stringify(payload, null, 2)}
 `;
 
     const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await result.response.text();
 
-    const rawBlocks = text
-      .split("<INSIGHT>")
+    insights = text
+      .split(/<INSIGHT>|\n\n/)
       .map((b) => b.trim())
-      .filter(Boolean);
-
-    insights = rawBlocks.map((block) => {
-      const lines = block
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
-      return lines.slice(0, 2).join("\n");
-    });
+      .filter((b) => b.length > 20)
+      .slice(0, 3);
 
     // Validate insights
-    const isValidInsight = (text) => {
-      const lines = text.split("\n").filter(Boolean);
-      const charCount = text.length;
-      return charCount >= 80 && charCount <= 350 && lines.length <= 3;
-    };
-
-    if (insights.length !== 3 || insights.some((i) => !isValidInsight(i))) {
+    if (insights.length < 3) {
+      logger.warn(`Gemini returned only ${insights.length} valid insights. Using fallback.`);
       insights = FALLBACK_INSIGHTS;
     }
   } catch (err) {
-    // Controlled logging
-    if (err?.status === 429 || err?.status === 503) {
-      logger.warn("Gemini unavailable today, using fallback");
-    } else {
-      logger.error(`Gemini Insights Error: ${err.message}`);
-    }
+    logger.error(`Gemini Insights Error: ${err.message}`);
     insights = FALLBACK_INSIGHTS;
   }
 
   // 4. Persist insights (restart-safe)
-  await prisma.userDailyInsight.upsert({
-    where: { userId },
-    update: { date: today, insights },
-    create: { userId, date: today, insights },
-  });
+  try {
+    const existingEntry = await prisma.userDailyInsight.findFirst({
+      where: { userId, date: today },
+    });
+
+    if (existingEntry) {
+      await prisma.userDailyInsight.updateMany({
+        where: { userId, date: today },
+        data: { insights, updatedAt: new Date() },
+      });
+    } else {
+      await prisma.userDailyInsight.create({
+        data: { userId, date: today, insights },
+      });
+    }
+  } catch (err) {
+    logger.error(`Failed to save insights to DB: ${err.message}`);
+  }
 
   return { status: "ready", insights };
 }

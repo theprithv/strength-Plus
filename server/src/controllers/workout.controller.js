@@ -50,13 +50,15 @@ export const startWorkout = async (req, res) => {
         (ex) => ex.day === currentRoutine.currentDay
       );
 
-      for (const routineExercise of daySpecificExercises) {
-        const workoutExercise = await prisma.workoutExercise.create({
-          data: {
-            workoutId: workout.id,
-            exerciseId: routineExercise.exerciseId,
-            order: routineExercise.order,
-          },
+      if (daySpecificExercises.length > 0) {
+        const exercisePayloads = daySpecificExercises.map((routineExercise) => ({
+          workoutId: workout.id,
+          exerciseId: routineExercise.exerciseId,
+          order: routineExercise.order,
+        }));
+
+        await prisma.workoutExercise.createMany({
+          data: exercisePayloads,
         });
       }
     }
@@ -163,7 +165,7 @@ export const finishWorkout = async (req, res) => {
       where: { id: workoutId },
       include: {
         exercises: {
-          include: { sets: true },
+          select: { id: true }, // Optimized selection
         },
       },
     });
@@ -176,22 +178,33 @@ export const finishWorkout = async (req, res) => {
       return res.status(400).json({ error: "Workout already completed" });
     }
 
-    // 🧹 CLEAN EMPTY SETS & EXERCISES
-    for (const ex of workout.exercises) {
+    // 🧹 BATCH CLEANUP: 1. Delete all empty sets across the entire workout
+    const workoutExerciseIds = workout.exercises.map((ex) => ex.id);
+
+    if (workoutExerciseIds.length > 0) {
+      // 1. Delete empty sets
       await prisma.setLog.deleteMany({
         where: {
-          workoutExerciseId: ex.id,
+          workoutExerciseId: { in: workoutExerciseIds },
           OR: [{ reps: 0 }, { weight: 0 }],
         },
       });
 
-      const remainingSets = await prisma.setLog.count({
-        where: { workoutExerciseId: ex.id },
+      // 2. Find exercises that still have sets
+      const exercisesWithSets = await prisma.setLog.groupBy({
+        by: ["workoutExerciseId"],
+        where: {
+          workoutExerciseId: { in: workoutExerciseIds },
+        },
       });
 
-      if (remainingSets === 0) {
-        await prisma.workoutExercise.delete({
-          where: { id: ex.id },
+      const validIds = new Set(exercisesWithSets.map((e) => e.workoutExerciseId));
+      const idsToDelete = workoutExerciseIds.filter((id) => !validIds.has(id));
+
+      // 3. Delete exercises that have NO sets remaining
+      if (idsToDelete.length > 0) {
+        await prisma.workoutExercise.deleteMany({
+          where: { id: { in: idsToDelete } },
         });
       }
     }
@@ -207,8 +220,9 @@ export const finishWorkout = async (req, res) => {
     });
 
     // 🛑 VALIDATION: Check if session is empty
-    const hasValidSets = cleanedWorkout.exercises.length > 0 && 
-      cleanedWorkout.exercises.some(ex => ex.sets.length > 0);
+    const hasValidSets =
+      cleanedWorkout.exercises.length > 0 &&
+      cleanedWorkout.exercises.some((ex) => ex.sets.length > 0);
 
     if (!hasValidSets) {
       // Delete the empty/invalid session entirely
@@ -228,7 +242,7 @@ export const finishWorkout = async (req, res) => {
       }
     }
 
-    const startTime = workout.startTime || workout.createdAt;
+    const startTime = cleanedWorkout.startTime || cleanedWorkout.createdAt;
     const endTime = new Date();
     const duration = Math.floor((endTime - startTime) / 1000);
 

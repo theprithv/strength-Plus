@@ -1,10 +1,7 @@
 import prisma from "../config/prisma.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
-import { sendResetEmail, sendOTPEmail } from "../utils/emailService.js";
-import { generateOTP, hashOTP, compareOTP } from "../utils/otpUtils.js";
 import config from "../config/env.js";
 import logger from "../config/logger.js";
 
@@ -22,26 +19,32 @@ export const register = async (req, res) => {
     const { email, password, name } = req.body;
     
     const trimmedEmail = String(email).trim().toLowerCase();
+
+    // STRICT: Only accepts @gmail.com addresses
+    if (!trimmedEmail.endsWith("@gmail.com")) {
+      return res.status(400).json({ message: "Invalid email ID. Only Gmail addresses are allowed." });
+    }
+
     const displayName = name && String(name).trim() ? String(name).trim() : trimmedEmail.split("@")[0];
 
+    // Check existing user
     const exists = await prisma.user.findUnique({ where: { email: trimmedEmail } });
     if (exists) return res.status(400).json({ message: "Email already exists" });
 
     const hashed = await bcrypt.hash(password, 12); // Production-level hashing
 
+    // Create user (Verified by default as per Gmail-only rule)
     const user = await prisma.user.create({
       data: { 
         email: trimmedEmail, 
         password: hashed, 
         name: displayName,
-        isVerified: false // Explicitly set false
       }
     });
 
-    // Log for debug (OTP will be sent via separate call or automatically)
-    logger.info(`[AUTH] New user registered: ${trimmedEmail}. Awaiting verification.`);
+    logger.info(`[AUTH] New user registered: ${trimmedEmail}.`);
 
-    // Initialize Profile for manual registration too
+    // Initialize Profile
     await prisma.profile.create({
       data: {
         userId: user.id,
@@ -53,10 +56,12 @@ export const register = async (req, res) => {
       }
     });
 
-    // We don't log them in yet, they need to verify
-    // But we still return user info for the UI to know who to verify
-    res.json({ 
-      message: "Registration successful. Please verify your email.",
+    // Generate JWT immediately
+    const token = jwt.sign({ id: user.id }, config.jwtSecret, { expiresIn: "7d" });
+
+    res.status(201).json({ 
+      message: "Registration successful",
+      token,
       user: safeUser(user) 
     });
   } catch (err) {
@@ -73,10 +78,15 @@ export const login = async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { email: trimmedEmail } });
     
-    // Generic error message for security (prevents user enumeration)
+    // Generic error message for security
     const genericMsg = "Invalid email or password";
 
     if (!user) return res.status(401).json({ message: genericMsg });
+
+    // Allow login if password exists (even if Google ID exists, password login is valid if set)
+    if (!user.password) {
+       return res.status(401).json({ message: "Please log in with Google." });
+    }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ message: genericMsg });
@@ -87,85 +97,6 @@ export const login = async (req, res) => {
   } catch (err) {
     logger.error(`Login error: ${err.message}`);
     res.status(500).json({ message: "An unexpected error occurred" });
-  }
-};
-
-// Forgot Password
-export const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-
-    // Security: Always respond with success even if user doesn't exist
-    if (!user) {
-      return res.json({ message: "If an account exists with that email, a reset link has been sent." });
-    }
-
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        passwordResetToken: hashedToken,
-        passwordResetExpires: new Date(Date.now() + 3600000), // 1 hour
-      },
-    });
-
-    // 🚀 Send the real email
-    try {
-      // Log token for development/debugging
-      if (config.isDev) logger.debug(`[DEBUG] Password reset token: ${resetToken}`);
-      await sendResetEmail(user.email, resetToken);
-    } catch (emailErr) {
-      logger.error(`Email sending failed: ${emailErr.message}`);
-      // We don't want to fail the whole request if email fails to SEND, 
-      // but in production you'd want to handle this.
-    }
-
-    res.json({ 
-      message: "If an account exists with that email, a reset link has been sent.",
-    });
-  } catch (err) {
-    logger.error(`Forgot password error: ${err.message}`);
-    res.status(500).json({ message: "Failed to process request" });
-  }
-};
-
-// Reset Password
-export const resetPassword = async (req, res) => {
-  try {
-    const { token, password } = req.body;
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-    const user = await prisma.user.findFirst({
-      where: {
-        passwordResetToken: hashedToken,
-        passwordResetExpires: { gt: new Date() },
-      },
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid or expired reset token" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        passwordResetToken: null,
-        passwordResetExpires: null,
-      },
-    });
-
-    res.json({ message: "Password updated successfully. You can now log in." });
-  } catch (err) {
-    logger.error(`Reset password error: ${err.message}`);
-    res.status(500).json({ message: "Failed to reset password" });
   }
 };
 
@@ -185,6 +116,11 @@ export const googleLogin = async (req, res) => {
     const { sub: googleId, email, name, picture } = payload;
     const trimmedEmail = email.toLowerCase();
 
+    // Enforce Gmail policy
+    if (!trimmedEmail.endsWith("@gmail.com")) {
+      return res.status(400).json({ message: "Only Gmail accounts are allowed." });
+    }
+
     // 2. Find or Create User
     let user = await prisma.user.findFirst({
       where: {
@@ -201,7 +137,6 @@ export const googleLogin = async (req, res) => {
           email: trimmedEmail,
           name: name || trimmedEmail.split("@")[0],
           googleId: googleId,
-          isVerified: true // Google users are pre-verified
         }
       });
       
@@ -220,7 +155,7 @@ export const googleLogin = async (req, res) => {
     } else if (!user.googleId) {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { googleId: googleId, isVerified: true }
+        data: { googleId: googleId }
       });
     }
 
@@ -230,140 +165,6 @@ export const googleLogin = async (req, res) => {
   } catch (err) {
     logger.error(`Google Login Error: ${err.message}`);
     res.status(500).json({ message: "Google authentication failed" });
-  }
-};
-
-// --- OTP Logic ---
-
-/**
- * Request a new OTP for email verification.
- * POST /auth/send-otp
- */
-export const sendOTP = async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ message: "Email is required" });
-    
-    const trimmedEmail = String(email).trim().toLowerCase();
-
-    // 1. Rate Limiting: Max 3 requests per hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-
-    const otpCount = await prisma.otp.count({
-      where: {
-        email: trimmedEmail,
-        createdAt: { gte: oneHourAgo }
-      }
-    });
-
-    if (otpCount >= 3) {
-      return res.status(429).json({ message: "OTP request limit reached. Please wait an hour before requesting a new code." });
-    }
-
-    // 2. Resend Cooldown: 60 seconds
-    const lastOtp = await prisma.otp.findFirst({
-      where: { email: trimmedEmail },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    if (lastOtp && (Date.now() - new Date(lastOtp.createdAt).getTime() < 60000)) {
-      return res.status(429).json({ message: "Please wait 60 seconds before requesting a new OTP." });
-    }
-
-    // 3. Generate and Hash OTP
-    const otp = generateOTP();
-    const hashedOtp = await hashOTP(otp);
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-
-    // 4. Update/Create OTP record (invalidate only expired ones to keep rate limits active)
-    await prisma.otp.deleteMany({ 
-      where: { 
-        email: trimmedEmail, 
-        expiresAt: { lt: new Date() } 
-      } 
-    });
-    
-    await prisma.otp.create({
-      data: {
-        email: trimmedEmail,
-        otp: hashedOtp,
-        expiresAt
-      }
-    });
-
-    // 5. Send Email
-    logger.info(`[AUTH] Sending OTP ${otp} to ${trimmedEmail}`);
-    await sendOTPEmail(trimmedEmail, otp);
-
-    res.json({ message: "Verification code sent to your email" });
-  } catch (err) {
-    logger.error(`Send OTP error: ${err.message}`);
-    res.status(500).json({ message: "Failed to send verification code" });
-  }
-};
-
-/**
- * Verify the OTP provided by the user.
- * POST /auth/verify-otp
- */
-export const verifyOTP = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
-
-    const trimmedEmail = String(email).trim().toLowerCase();
-
-    // 1. Find OTP record
-    const otpRecord = await prisma.otp.findFirst({
-      where: { email: trimmedEmail }
-    });
-
-    if (!otpRecord) {
-      return res.status(400).json({ message: "No active verification code found for this email" });
-    }
-
-    // 2. Check Expiration
-    if (new Date() > otpRecord.expiresAt) {
-      await prisma.otp.delete({ where: { id: otpRecord.id } });
-      return res.status(400).json({ message: "Verification code has expired. Please request a new one." });
-    }
-
-    // 3. Check Attempt Count (max 5)
-    if (otpRecord.attemptsCount >= 5) {
-      await prisma.otp.delete({ where: { id: otpRecord.id } });
-      return res.status(400).json({ message: "Too many failed attempts. Please request a new code." });
-    }
-
-    // 4. Verify Code
-    const isValid = await compareOTP(otp, otpRecord.otp);
-    if (!isValid) {
-      await prisma.otp.update({
-        where: { id: otpRecord.id },
-        data: { attemptsCount: { increment: 1 } }
-      });
-      return res.status(400).json({ message: "Invalid verification code" });
-    }
-
-    // 5. Success: Activate User
-    const user = await prisma.user.update({
-      where: { email: trimmedEmail },
-      data: { isVerified: true }
-    });
-
-    // Clean up
-    await prisma.otp.delete({ where: { id: otpRecord.id } });
-
-    // Generate JWT for immediate login
-    const token = jwt.sign({ id: user.id }, config.jwtSecret, { expiresIn: "7d" });
-
-    res.json({ 
-      message: "Email verified successfully!",
-      token,
-      user: safeUser(user)
-    });
-  } catch (err) {
-    logger.error(`Verify OTP error: ${err.message}`);
-    res.status(500).json({ message: "Verification failed" });
   }
 };
 

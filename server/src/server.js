@@ -17,8 +17,6 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import geminiRoutes from "./routes/gemini.routes.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
-import { cleanupExpiredOTPs } from "./utils/otpCleanup.js";
-
 
 
 const app = express();
@@ -62,8 +60,4 @@ app.use(errorHandler);
 const PORT = config.port;
 app.listen(PORT, () => {
   logger.info(`Server running on ${PORT}`);
-  
-  // Run OTP cleanup once on startup and then every hour
-  cleanupExpiredOTPs();
-  setInterval(cleanupExpiredOTPs, 60 * 60 * 1000);
 });

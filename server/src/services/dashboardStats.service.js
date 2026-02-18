@@ -178,6 +178,9 @@ export async function getMuscleBalance(userId, range = "week") {
   const { start: startWeek, end } = getDateRange("week");
   const { start: startMonth } = getDateRange("month");
 
+  // Fetch only necessary data:
+  // - Filter workouts by date range
+  // - Select only exercise names, muscle groups, and SET COUNTS (not full set objects)
   const workouts = await prisma.workout.findMany({
     where: {
       userId,
@@ -187,9 +190,23 @@ export async function getMuscleBalance(userId, range = "week") {
         { startTime: null, createdAt: { gte: startMonth, lte: end } },
       ],
     },
-    include: {
+    select: {
+      startTime: true,
+      createdAt: true,
       exercises: {
-        include: { exercise: true, sets: true },
+        select: {
+          exercise: {
+            select: {
+              name: true,
+              primaryMuscle: true,
+              secondaryMuscles: true,
+            },
+          },
+          // Aggregate: Count sets instead of fetching them
+          _count: {
+            select: { sets: true },
+          },
+        },
       },
     },
   });
@@ -203,36 +220,41 @@ export async function getMuscleBalance(userId, range = "week") {
     };
   });
 
-  workouts.forEach((w) => {
+  for (const w of workouts) {
     const workoutTime = new Date(w.startTime ?? w.createdAt);
     const inWeek = workoutTime >= startWeek;
+    
+    // Since we filtered by startMonth in the query, we know it's in the month window
+    // but explicit check is fine for safety if logic changes
     const inMonth = workoutTime >= startMonth;
 
-    w.exercises.forEach((ex) => {
+    for (const ex of w.exercises) {
       const primary = ex.exercise.primaryMuscle.toLowerCase().trim();
-      const secondaries = ex.exercise.secondaryMuscles.map(m => m.toLowerCase().trim());
+      const secondaries = ex.exercise.secondaryMuscles.map((m) => m.toLowerCase().trim());
       const exerciseName = ex.exercise.name;
+      const setCount = ex._count.sets; // Direct count from DB
+
+      if (setCount === 0) continue;
 
       // Add to primary muscle balance
       if (balance[primary]) {
-        const setCount = ex.sets.length;
         if (inWeek) balance[primary].weekSets += setCount;
         if (inMonth) balance[primary].monthSets += setCount;
-        balance[primary].exercises[exerciseName] = (balance[primary].exercises[exerciseName] || 0) + setCount;
+        balance[primary].exercises[exerciseName] =
+          (balance[primary].exercises[exerciseName] || 0) + setCount;
       }
 
-      // Add to secondary muscle balance (with a lower weight or full weight?) 
-      // User says "issue", so let's give full set credit for now to make charts look "right"
-      secondaries.forEach(sec => {
+      // Add to secondary muscle balance
+      for (const sec of secondaries) {
         if (balance[sec] && sec !== primary) {
-          const setCount = ex.sets.length;
           if (inWeek) balance[sec].weekSets += setCount;
           if (inMonth) balance[sec].monthSets += setCount;
-          balance[sec].exercises[exerciseName] = (balance[sec].exercises[exerciseName] || 0) + setCount;
+          balance[sec].exercises[exerciseName] =
+            (balance[sec].exercises[exerciseName] || 0) + setCount;
         }
-      });
-    });
-  });
+      }
+    }
+  }
 
   return balance;
 }
