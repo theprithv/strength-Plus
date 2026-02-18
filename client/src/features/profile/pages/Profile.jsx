@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { AuthContext } from "../../../context/AuthContext";
 import {
   getProfile,
   updateProfile,
@@ -11,20 +12,64 @@ import ProfileRightPanel from "../components/ProfileRightPanel";
 import "../styles/Profile.css";
 
 export default function Profile() {
-  const [userData, setUserData] = useState(null);
+  const { user } = useContext(AuthContext);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Helper for caching
+  const getCachedData = (key) => {
+    if (!user?.id) return null;
+    try {
+      const cached = sessionStorage.getItem(`prof_${user.id}_${key}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  };
+
   const [range, setRange] = useState(7);
-  const [prWeights, setPrWeights] = useState({});
+  
+  // Hydrate from cache immediately
+  const [userData, setUserData] = useState(() => getCachedData("main"));
+  
+  // Helpers for extracting derived state
+  const extractTempProfile = (data) => {
+    const p = data?.profile?.profile;
+    return {
+      bio: p?.bio || "",
+      height: p?.height || "",
+      weight: p?.weight || "",
+      age: p?.age || "",
+    };
+  };
+
+  const extractPrWeights = (data) => {
+    const prDetails = {};
+    if (!data?.profile?.prDetails) return {};
+    const preFetched = data.profile.prDetails;
+    data.profile.prSlots.forEach((slot) => {
+       if (slot.exerciseId && preFetched[slot.exerciseId]) {
+          const rec = preFetched[slot.exerciseId];
+          prDetails[slot.exerciseId] = {
+            weight: rec.weight,
+            date: rec.date ? new Date(rec.date).toLocaleDateString("en-GB") : "No Record"
+          };
+       } else if (slot.exerciseId) {
+         prDetails[slot.exerciseId] = { weight: 0, date: "No Record" };
+       }
+    });
+    return prDetails;
+  };
+
+  const [durationData, setDurationData] = useState(() => getCachedData(`dur_${7}`) || { series: [], average: 0 });
+
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState(null);
-  const [durationData, setDurationData] = useState({ series: [], average: 0 });
+  
+  // Synchronously initialize derived state from cached userData
+  const [tempProfile, setTempProfile] = useState(() => extractTempProfile(userData));
+  const [prWeights, setPrWeights] = useState(() => extractPrWeights(userData));
+
   const [isLoadingDuration, setIsLoadingDuration] = useState(false);
-  const [tempProfile, setTempProfile] = useState({
-    bio: "",
-    height: "",
-    weight: "",
-    age: "",
-  });
+
   const formatDuration = (seconds) => {
     if (!seconds || seconds === 0) return "0s";
     const h = Math.floor(seconds / 3600);
@@ -47,54 +92,45 @@ export default function Profile() {
     0,
   ];
 
-  const fetchData = async () => {
+  // Fetch main profile data with cache support
+  const fetchData = async (force = false) => {
+    if (!user?.id) return;
+    
     try {
-      const res = await getProfile();
-      const data = res.data;
-      setUserData(data);
-
-      // === FIX START: Populate tempProfile with database values ===
-      if (data?.profile?.profile) {
-        const p = data.profile.profile;
-        setTempProfile({
-          bio: p.bio || "",
-          height: p.height || "",
-          weight: p.weight || "",
-          age: p.age || "",
-        });
+      // If we don't have data, or we are forcing a refresh (mutation)
+      if (force || !userData) {
+        const res = await getProfile();
+        const data = res.data;
+        sessionStorage.setItem(`prof_${user.id}_main`, JSON.stringify(data));
+        
+        // Batch updates
+        setUserData(data);
+        setTempProfile(extractTempProfile(data));
+        setPrWeights(extractPrWeights(data));
       }
-      // === FIX END ===
-
-      // ⚡ OPTIMIZATION: Use pre-fetched PRs from backend (N+1 fix)
-      if (data?.profile?.prDetails) {
-        const prDetails = {};
-        const preFetched = data.profile.prDetails;
-
-        data.profile.prSlots.forEach((slot) => {
-           if (slot.exerciseId && preFetched[slot.exerciseId]) {
-              const rec = preFetched[slot.exerciseId];
-              prDetails[slot.exerciseId] = {
-                weight: rec.weight,
-                date: rec.date 
-                  ? new Date(rec.date).toLocaleDateString("en-GB")
-                  : "No Record"
-              };
-           } else if (slot.exerciseId) {
-             prDetails[slot.exerciseId] = { weight: 0, date: "No Record" };
-           }
-        });
-        setPrWeights(prDetails);
-      }
+      // Else: Data is already hydrated from cache, and states are initialized. Do nothing.
     } catch (err) {
       console.error("Error fetching profile data", err);
     }
   };
 
-  const fetchDurationStats = async () => {
+  const fetchDurationStats = async (force = false) => {
+    if (!user?.id) return;
+    
+    // Check cache for this range
+    if (!force) {
+      const cached = getCachedData(`dur_${range}`);
+      if (cached) {
+        setDurationData(cached);
+        return;
+      }
+    }
+
     setIsLoadingDuration(true);
     try {
       const res = await api.get(`/profile/duration-stats?range=${range}`);
       setDurationData(res.data);
+      sessionStorage.setItem(`prof_${user.id}_dur_${range}`, JSON.stringify(res.data));
     } catch (err) {
       console.error("Failed to fetch duration stats", err);
     } finally {
@@ -102,13 +138,35 @@ export default function Profile() {
     }
   };
 
+  // Initial Data Load (skips API if cached)
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Pass 'true' only if refreshKey > 0 (mutation happened)
+    fetchData(refreshKey > 0);
+  }, [user, refreshKey]);
 
   useEffect(() => {
-    fetchDurationStats();
-  }, [range]);
+    fetchDurationStats(refreshKey > 0);
+  }, [range, user, refreshKey]);
+
+  // Listen for global mutations
+  useEffect(() => {
+    const handleMutation = () => {
+      try {
+        // Clear profile cache keys
+        Object.keys(sessionStorage).forEach((key) => {
+          if (key.startsWith("prof_")) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        console.warn("Failed to clear profile cache", e);
+      }
+      setRefreshKey(p => p + 1);
+    };
+
+    window.addEventListener("api-mutation-success", handleMutation);
+    return () => window.removeEventListener("api-mutation-success", handleMutation);
+  }, []);
 
   const formatMixedStats = (num, type) => {
     if (!num || num === 0) return "0";
@@ -148,9 +206,9 @@ export default function Profile() {
     }
   };
 
-  if (!userData) return null;
 
-  const { name, prSlots, profile } = userData.profile;
+
+  const { name, prSlots, profile } = userData?.profile || {};
 
   return (
     <div className="profile-container">

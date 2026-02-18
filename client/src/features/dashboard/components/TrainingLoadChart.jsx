@@ -8,32 +8,12 @@ import {
   ResponsiveContainer,
   AreaChart,
 } from "recharts";
-import { useEffect, useState } from "react";
-import api from "../../../services/api";
+import { useMemo } from "react";
 
-const TrainingLoadChart = () => {
-  const [data, setData] = useState([]);
-  const [range, setRange] = useState("week");
-
-  useEffect(() => {
-    const fetchLoad = async () => {
-      try {
-        const res = await api.get(`/dashboard/training-load?range=${range}`);
-        // Keep your logic for tooltip comparison
-        const enrichedData = res.data.map((item, index) => {
-          if (index === 0) return { ...item, change: 0 };
-          const prevLoad = res.data[index - 1].load;
-          const change =
-            prevLoad === 0 ? 0 : ((item.load - prevLoad) / prevLoad) * 100;
-          return { ...item, change: change.toFixed(1) };
-        });
-        setData(enrichedData);
-      } catch (err) {
-        console.error("Failed to fetch training load", err);
-      }
-    };
-    fetchLoad();
-  }, [range]);
+const TrainingLoadChart = ({ data = null, range, setRange }) => {
+  // Removed enrichedData calculation to prevent "loading volume data" issue
+  // We will use the raw 'data' prop directly.
+  const chartData = data || [];
 
   return (
     <div className="training-load-card">
@@ -69,7 +49,18 @@ const TrainingLoadChart = () => {
         className="chart-container"
         style={{ width: "100%", height: "260px", position: "relative" }}
       >
-        {data.length === 0 || data.every((item) => item.load === 0) ? (
+        {!data && chartData.length === 0 ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+            }}
+          >
+            <div className="chart-spinner"></div>
+          </div>
+        ) : chartData.length === 0 || chartData.every((item) => item.load === 0) ? (
           <div
             className="chart-placeholder"
             style={{
@@ -87,7 +78,7 @@ const TrainingLoadChart = () => {
           /* FIX: We use a fixed height number (300) here to guarantee the chart renders */
           <ResponsiveContainer width="100%" height={270} minWidth={0} minHeight={0} debounce={50}>
             <AreaChart
-              data={data}
+              data={chartData}
               margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
             >
               <defs>
@@ -133,21 +124,12 @@ const TrainingLoadChart = () => {
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
-                    const change = payload[0].payload.change;
                     return (
                       <div className="custom-chart-tooltip">
                         <p className="tooltip-label">{label}</p>
                         <p className="tooltip-value">
                           Load: <span>{payload[0].value.toLocaleString()}</span>
                         </p>
-                        {change !== "0.0" && (
-                          <p
-                            className={`tooltip-change ${parseFloat(change) >= 0 ? "pos" : "neg"}`}
-                          >
-                            {parseFloat(change) >= 0 ? "↑" : "↓"}{" "}
-                            {Math.abs(change)}% vs last period
-                          </p>
-                        )}
                       </div>
                     );
                   }

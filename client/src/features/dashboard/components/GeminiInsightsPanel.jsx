@@ -27,15 +27,30 @@ export default function GeminiInsightsPanel() {
   const greeting = getGreeting();
   const name = user?.name || "Athlete";
 
-  /* fetch once */
+  /* fetch once with cache */
   useEffect(() => {
+    if (!user?.id) return;
+    
+    // Create a daily cache key so insights refresh daily
+    const today = new Date().toDateString();
+    const cacheKey = `gemini_insights_v2_${user.id}_${today}`;
+    const cached = sessionStorage.getItem(cacheKey);
+
+    if (cached) {
+      const data = JSON.parse(cached);
+      setInsights(data.insights || []);
+      setStatus(data.status || "analyzing");
+      return;
+    }
+
     getGeminiInsights()
       .then((data) => {
         setInsights(data.insights || []);
         setStatus(data.status || "analyzing");
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
       })
       .catch(() => setStatus("analyzing"));
-  }, []);
+  }, [user]);
 
   /* main animation brain */
   useEffect(() => {

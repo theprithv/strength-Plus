@@ -552,3 +552,44 @@
     margin: 0 auto;
   }
 }
+
+/* Loading Spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-actions-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.latency-feedback {
+  font-size: 13px;
+  color: #38bdf8;
+  /* Brand blue */
+  text-align: center;
+  margin: -4px 0 0 0;
+  animation: fadeIn 0.4s ease;
+}
+
+/* Update spinner for inline usage */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  margin-right: 8px;
+  /* Gap logic handled by flex gap? No, putting a margin is safer */
+  flex-shrink: 0;
+}

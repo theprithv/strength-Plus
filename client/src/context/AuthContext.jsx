@@ -15,13 +15,15 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
 
   const fetchProfile = useCallback(async () => {
+    // Avoid redundant fetches if profile is already loaded
+    if (profile) return;
     try {
       const res = await api.get("/profile");
       setProfile(res.data);
     } catch (err) {
       console.error("Failed to fetch profile:", err);
     }
-  }, []);
+  }, [profile]); // Depend on profile state
 
   const checkActiveWorkout = useCallback(async () => {
     try {
@@ -48,26 +50,48 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token") || sessionStorage.getItem("token");
-    const savedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
-
     const initAuth = async () => {
+      const savedToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const savedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
+
       if (savedToken && savedUser) {
         setToken(savedToken);
         try {
           setUser(JSON.parse(savedUser));
-          // Hydrate global state
-          await Promise.allSettled([checkActiveWorkout(), fetchProfile()]);
-        } catch {
+          
+          // These calls might fail with 401 if token is expired
+          // We can't use the global interceptor reload here easily because we are mounting.
+          await Promise.all([
+             api.get("/workouts/active").then(res => {
+               if (res.data) {
+                 setIsWorkoutActive(true);
+                 setActiveWorkoutId(res.data.id);
+                 if (res.data.elapsedSeconds !== undefined) {
+                   setWorkoutStartTime(Date.now() - (res.data.elapsedSeconds * 1000));
+                 } else {
+                   setWorkoutStartTime(new Date(res.data.startTime || res.data.createdAt).getTime());
+                 }
+               }
+             }),
+             api.get("/profile").then(res => setProfile(res.data))
+          ]);
+
+        } catch (e) {
+          console.error("Auth Init Error (Token likely expired):", e);
+          // Silent logout on init error
+          setToken(null);
+          setUser(null);
           localStorage.removeItem("user");
+          localStorage.removeItem("token");
           sessionStorage.removeItem("user");
+          sessionStorage.removeItem("token");
         }
       }
       setLoading(false);
     };
 
     initAuth();
-  }, [checkActiveWorkout, fetchProfile]);
+  }, []); // Run once on mount
 
   const login = (userData, jwtToken, rememberMe = false) => {
     const safe = userData

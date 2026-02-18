@@ -49,11 +49,12 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-const MuscleSetsChart = () => {
-  const { user } = useContext(AuthContext);
+const MuscleSetsChart = ({ initialData }) => {
   const [range, setRange] = useState("week"); // Default: Week
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const [rawData, setRawData] = useState(null);
 
   const renderCustomBarLabel = ({ x, y, width, height, value }) => {
     return (
@@ -72,28 +73,32 @@ const MuscleSetsChart = () => {
     );
   };
 
+  // 1. Sync with parent data
   useEffect(() => {
-    if (!user?.id) return;
-    getMuscleBalance(range).then((res) => {
-      const formatted = Object.entries(res)
-        .map(([key, stats]) => ({
-          name: key,
-          label: key.charAt(0).toUpperCase() + key.slice(1),
-          displayValue: range === "week" ? stats.weekSets : stats.monthSets,
-          weekSets: stats.weekSets,
-          monthSets: stats.monthSets,
-          rawExercises: stats.exercises,
-        }))
-        .filter((item) => item.displayValue > 0)
-        .sort((a, b) => b.displayValue - a.displayValue);
-
-      setChartData(formatted);
+    if (initialData) {
+      setRawData(initialData);
       setLoading(false);
-    });
-  }, [user, range]);
+    }
+  }, [initialData]);
 
-  if (loading)
-    return <div className="chart-placeholder">Loading volume data...</div>;
+  // 2. Process data locally when 'range' or 'rawData' changes
+  useEffect(() => {
+    if (!rawData) return;
+
+    const formatted = Object.entries(rawData)
+      .map(([key, stats]) => ({
+        name: key,
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+        displayValue: range === "week" ? stats.weekSets : stats.monthSets,
+        weekSets: stats.weekSets,
+        monthSets: stats.monthSets,
+        rawExercises: stats.exercises,
+      }))
+      .filter((item) => item.displayValue > 0)
+      .sort((a, b) => b.displayValue - a.displayValue);
+
+    setChartData(formatted);
+  }, [rawData, range]);
 
   return (
     <div className="stats-card sets-chart-card">
@@ -116,7 +121,18 @@ const MuscleSetsChart = () => {
       </div>
 
       <div className="chart-container" style={{ width: "100%", minHeight: "150px" }}>
-        {chartData.length === 0 ? (
+        {loading && !rawData ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "150px",
+            }}
+          >
+            <div className="chart-spinner"></div>
+          </div>
+        ) : chartData.length === 0 ? (
           <div
             style={{
               display: "flex",

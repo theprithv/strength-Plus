@@ -10,10 +10,7 @@ import {
 import api from "../../../services/api";
 import { DASHBOARD_MUSCLES } from "../constants/dashboardMuscles";
 
-const MuscleOverloadChart = () => {
-  const [muscle, setMuscle] = useState("chest"); // This was missing
-  const [range, setRange] = useState(30);
-  const [data, setData] = useState([]);
+const MuscleOverloadChart = ({ data = [], muscle, setMuscle, range, setRange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -27,23 +24,8 @@ const MuscleOverloadChart = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const fetchTrend = async () => {
-      try {
-        // Exercise is now fixed to "All" as per your request to remove the slider
-        const res = await api.get(`/dashboard/muscle-overload`, {
-          params: { muscle, range, exercise: "All" },
-        });
-        setData(res.data.series || []);
-      } catch (err) {
-        console.error("Failed to fetch overload trend", err);
-      }
-    };
-    fetchTrend();
-  }, [muscle, range]);
-
-  const currentPoint = data.length > 0 ? data[data.length - 1] : null;
-  const prevPoint = data.length > 1 ? data[data.length - 2] : null;
+  const currentPoint = data && data.length > 0 ? data[data.length - 1] : null;
+  const prevPoint = data && data.length > 1 ? data[data.length - 2] : null;
   const delta =
     currentPoint && prevPoint ? currentPoint.score - prevPoint.score : 0;
 
@@ -199,7 +181,20 @@ const MuscleOverloadChart = () => {
         className="chart-container"
         style={{ height: "270px", marginTop: "10px", paddingLeft: "4px" }}
       >
-        {data.length === 0 || data.every((item) => item.score === 0) ? (
+        {!data ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              color: "#6b7280",
+              fontSize: "14px",
+            }}
+          >
+            Loading...
+          </div>
+        ) : data.length === 0 || data.every((item) => item.score === 0) ? (
           <div
             style={{
               display: "flex",

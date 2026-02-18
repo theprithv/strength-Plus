@@ -7,7 +7,8 @@ export default function ExerciseSelectModal({ isOpen, onClose, onSelect }) {
 
   useEffect(() => {
     if (isOpen) {
-      getExercises().then((res) => {
+      // Increase limit to ensures we get the full library for frontend filtering
+      getExercises({ limit: 1000 }).then((res) => {
         // Handle pagination object { exercises: [], ... } or direct array
         setExercises(res.exercises || res || []);
       });
@@ -17,9 +18,11 @@ export default function ExerciseSelectModal({ isOpen, onClose, onSelect }) {
   if (!isOpen) return null;
 
   const exerciseList = Array.isArray(exercises) ? exercises : [];
-  const filtered = exerciseList.filter((ex) =>
-    ex.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = exerciseList.filter((ex) => {
+    const name = ex.name.toLowerCase();
+    const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
+    return searchWords.every((word) => name.includes(word));
+  });
 
   return (
     <div className="profile-modal-overlay" onClick={onClose}>

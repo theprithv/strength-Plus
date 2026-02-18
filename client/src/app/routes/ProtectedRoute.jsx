@@ -7,11 +7,7 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div style={{ padding: "2rem", textAlign: "center", color: "#9ca3af" }}>
-        Loading…
-      </div>
-    );
+    return null;
   }
   if (!token) {
     return <Navigate to="/login" replace state={{ from: location }} />;

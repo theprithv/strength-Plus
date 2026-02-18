@@ -9,7 +9,7 @@ if (!baseURL) {
 const api = axios.create({ baseURL });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -17,7 +17,15 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Check if the request was a mutation (POST, PUT, DELETE, PATCH)
+    const method = res.config.method?.toLowerCase();
+    if (["post", "put", "delete", "patch"].includes(method)) {
+      // Dispath explicit event for cache invalidation
+      window.dispatchEvent(new Event("api-mutation-success"));
+    }
+    return res;
+  },
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem("token");
