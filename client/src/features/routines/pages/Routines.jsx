@@ -19,6 +19,9 @@ export default function Routines() {
   const [routinesError, setRoutinesError] = useState(null);
   const editRef = useRef(null);
   const activeRequest = useRef(null);
+  // Prevents the activeRoutine useEffect from re-fetching exercises
+  // already loaded by the priority fetch.
+  const priorityLoaded = useRef(false);
 
   useEffect(() => {
     loadRoutines();
@@ -40,20 +43,56 @@ export default function Routines() {
   }, [editingId]);
 
   useEffect(() => {
-    if (activeRoutine) {
-      loadRoutineExercises(activeRoutine.id, selectedDay);
+    if (!activeRoutine) return;
+    // If the priority fetch already loaded exercises for this routine+day,
+    // skip the normal load to avoid a redundant network request.
+    if (priorityLoaded.current) {
+      priorityLoaded.current = false; // consume the flag
+      return;
     }
+    loadRoutineExercises(activeRoutine.id, selectedDay);
   }, [activeRoutine?.id, selectedDay]);
 
   async function loadRoutines() {
     setRoutinesError(null);
+
+    // Priority: fetch the active split immediately so exercises appear before the full list loads.
+    api
+      .get("/routines/current")
+      .then((res) => {
+        const current = res.data;
+        if (!current) return;
+
+        const day = current.currentDay || 1;
+        const dayExercises = (current.exercises || [])
+          .filter((e) => e.day === day)
+          .map((e) => ({
+            id: e.id,
+            exerciseId: e.exerciseId,
+            name: e.exercise.name,
+            order: e.order,
+          }));
+
+        priorityLoaded.current = true;
+        setActiveRoutine(current);
+        setSelectedDay(day);
+        setRoutineExercises(dayExercises);
+      })
+      .catch(() => {});
+
+    // Background: load the full routines list for the sidebar.
     try {
       const res = await api.get("/routines");
       setRoutines(res.data || []);
-      const current = (res.data || []).find((r) => r.isCurrent) || res.data?.[0];
-      if (current) {
-        setActiveRoutine(current);
-        setSelectedDay(current.currentDay || 1);
+
+      // Fallback if there is no current routine (priority returned null).
+      if (!priorityLoaded.current) {
+        const current =
+          (res.data || []).find((r) => r.isCurrent) || res.data?.[0];
+        if (current) {
+          setActiveRoutine(current);
+          setSelectedDay(current.currentDay || 1);
+        }
       }
     } catch (err) {
       console.error("Failed to load routines", err);
@@ -247,7 +286,6 @@ export default function Routines() {
                   activeRoutine?.id === r.id ? "active" : ""
                 }`}
               >
-                {/* your existing routine-row JSX */}
                 <div className="routine-row">
                   {editingId === r.id ? (
                     <input

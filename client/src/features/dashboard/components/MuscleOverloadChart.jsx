@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   AreaChart,
   Area,
@@ -13,6 +13,13 @@ import { DASHBOARD_MUSCLES } from "../constants/dashboardMuscles";
 const MuscleOverloadChart = ({ data = [], muscle, setMuscle, range, setRange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Memoize the tooltip renderer so Recharts gets a stable reference
+  // and does NOT unmount/remount the tooltip on every render (prevents flickering)
+  const renderTooltip = useCallback(
+    (props) => <CustomTooltip {...props} range={range} />,
+    [range]
+  );
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -239,7 +246,7 @@ const MuscleOverloadChart = ({ data = [], muscle, setMuscle, range, setRange }) 
                 tickFormatter={(val) => `${val}kg`}
                 padding={{ top: 10, bottom: 10 }}
               />
-              <Tooltip content={<CustomTooltip range={range} />} />
+              <Tooltip content={renderTooltip} />
               <Area
                 type="linear"
                 dataKey="score"
@@ -268,10 +275,24 @@ const CustomTooltip = ({ active, payload, range }) => {
     const { date, drivers, score, hasNewExercisesOnly } = payload[0].payload;
     const status = payload[0].payload.status || "flat";
 
+    // Only exercises that actually improved or declined (not plateau, not new)
+    const causativeDrivers = (drivers || []).filter(
+      (d) => d.status === "improved" || d.status === "declined"
+    );
+
+    // Show exercise list only when improving/declining AND there are real changes AND not all-new
+    const showExercises =
+      (status === "up" || status === "down") &&
+      !hasNewExercisesOnly &&
+      causativeDrivers.length > 0;
+
+    // Show new-exercise message when all drivers are brand-new exercises (no history)
+    const showNewExerciseMessage = hasNewExercisesOnly;
+
     return (
       <div className="custom-chart-tooltip">
         <p className="tooltip-label">{date}</p>
-        <p style={{ color: "#fff", fontSize: "#13px", marginBottom: "4px" }}>
+        <p style={{ color: "#fff", fontSize: "13px", marginBottom: "4px" }}>
           {range === 30
             ? `Est. Strength (Last 5 Days): ${score}kg`
             : `Est. Strength (Last 10 Days): ${score}kg`}
@@ -294,9 +315,10 @@ const CustomTooltip = ({ active, payload, range }) => {
               ? "Regression Detected"
               : "Stable (Plateau)"}
         </p>
-        {drivers && drivers.length > 0 ? (
+
+        {/* Case 1: Improving or Declining — show what caused it */}
+        {showExercises && (
           <div
-            className="tooltip-exercises"
             style={{
               marginTop: "8px",
               paddingTop: "8px",
@@ -304,7 +326,6 @@ const CustomTooltip = ({ active, payload, range }) => {
             }}
           >
             <p
-              className="exercise-header"
               style={{
                 marginBottom: "6px",
                 fontSize: "10px",
@@ -313,72 +334,52 @@ const CustomTooltip = ({ active, payload, range }) => {
                 letterSpacing: "0.5px",
               }}
             >
-              Exercise Details:
+              {status === "up" ? "What Improved:" : "What Declined:"}
             </p>
-            {/* Show message if all exercises are new */}
-            {hasNewExercisesOnly && (
-              <p
-                style={{
-                  fontSize: "11px",
-                  color: "#9ca3af",
-                  marginBottom: "6px",
-                  fontStyle: "italic",
-                }}
-              >
-                No past exercises have improvements
-              </p>
-            )}
-            {drivers
-              .filter((driver) => {
-                // For improvement/regression, exclude new exercises
-                // For plateau/flat, show all exercises
-                if (status === "up" || status === "down") {
-                  return driver.status !== "new";
-                }
-                return true;
-              })
-              .map((driver, i) => {
-              const { exercise, weight, reps, change, status: driverStatus } = driver;
-              
-              // Determine color based on status
-              const statusColor =
-                driverStatus === "improved"
-                  ? "#38bdf8" 
-                  : driverStatus === "declined"
-                    ? "#64748b"
-                    : driverStatus === "plateau"
-                      ? "#4b5563" 
-                      : "#9ca3af"; 
-              
-              // Format display text
-              let displayText = `${exercise}  `;
-              if (driverStatus === "improved") {
-                displayText += `+${change}kg`;
-              } else if (driverStatus === "declined") {
-                displayText += `${change}kg`; // Already negative
-              } else if (driverStatus === "plateau") {
-                displayText += "Plateau";
-              } else if (driverStatus === "new") {
-                displayText += "New Exercise trained";
-              }
-
+            {causativeDrivers.map((driver, i) => {
+              const { exercise, change, status: driverStatus } = driver;
+              const color = driverStatus === "improved" ? "#38bdf8" : "#64748b";
+              const sign = driverStatus === "improved" ? "+" : "";
               return (
                 <p
                   key={i}
-                  className="exercise-text-item"
                   style={{
                     fontSize: "12px",
-                    color: statusColor,
+                    color,
                     marginBottom: "3px",
-                    fontWeight: driverStatus === "new" ? "400" : "500",
+                    fontWeight: "500",
                   }}
                 >
-                  • {displayText}
+                  • {exercise}&nbsp;&nbsp;{sign}{change}kg
                 </p>
               );
             })}
           </div>
-        ) : null}
+        )}
+
+        {/* Case 2: All drivers are new exercises — no history to compare */}
+        {showNewExerciseMessage && (
+          <div
+            style={{
+              marginTop: "8px",
+              paddingTop: "8px",
+              borderTop: "1px solid #1f2937",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#9ca3af",
+                fontStyle: "italic",
+                margin: 0,
+              }}
+            >
+              🏋️ New Exercise Trained — No past exercises have any improvement.
+            </p>
+          </div>
+        )}
+
+        {/* Case 3: Stable with real history — nothing extra shown */}
       </div>
     );
   }

@@ -305,11 +305,12 @@
 }
 
 .set-action-btn.cancel {
-  color: var(--workout-text-dim);
+  color: var(--workout-accent);
 }
 
 .set-action-btn.cancel:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.2);
 }
 
 .inline-edit-input {

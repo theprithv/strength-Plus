@@ -1,10 +1,11 @@
-# ⚡ Strength+ | Premium Fitness Tracker
+
+# ⚡ StrengthPlus | Premium Fitness Tracker
 
 Strength+ is a state-of-the-art web application designed for athletes who demand precision, speed, and a premium aesthetic in their training. Built with a "dark-mode first" philosophy, it combines a SaaS-inspired interface with a robust backend to provide seamless workout logging and routine management.
 
-![Project Preview](https://github.com/theprithv/Strength-Plus/blob/master/preview.png?raw=true) *(Note: Add your own preview image here later)*
+![Project Preview](https://github.com/theprithv/Strength-Plus)
 
-## ✨ Key Features
+### Key Features
 
 ### 🏋️ Advanced Workout Session
 - **Real-time Tracking**: Live duration timer and dynamic stats (Sets, Reps, Volume).
@@ -17,7 +18,7 @@ Strength+ is a state-of-the-art web application designed for athletes who demand
 - **Reordering**: Drag-and-drop exercises to optimize your training flow.
 - **Library Integration**: Search and add from a comprehensive database of muscle-specific exercises.
 
-### 💎 Premium Design
+### 💎Premium Design
 - **Glassmorphism UI**: High-end frosted glass effects and vibrant accent colors.
 - **OLED Optimized**: Deep dark themes with #050505 backgrounds to save battery and look stunning.
 - **Fluid Animations**: Custom cubic-bezier transitions for toasts, menus, and item entries.
@@ -55,7 +56,6 @@ Strength+ is a state-of-the-art web application designed for athletes who demand
    git clone https://github.com/theprithv/Strength-Plus.git
    cd Strength-Plus
    ```
-
 2. **Setup Server**
    ```bash
    cd server
@@ -84,6 +84,4 @@ Ensure your `.env` file includes:
    ```
 
 ## 📜 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Built by [theprithv](https://github.com/theprithv)
+This project is Built by [theprithv](https://github.com/theprithv)

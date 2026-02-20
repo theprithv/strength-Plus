@@ -251,7 +251,7 @@
 .set-row {
   display: flex;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: #38bdf80d;
   border: 1px solid #1f2937;
   padding: 6px 12px;
   border-radius: 6px;
