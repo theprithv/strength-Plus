@@ -174,6 +174,17 @@ function getISOWeek(date) {
 }
 
 export async function getMuscleBalance(userId, range = "week") {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  const startWeek = new Date();
+  startWeek.setDate(startWeek.getDate() - 6);
+  startWeek.setHours(0, 0, 0, 0);
+
+  const startMonth = new Date();
+  startMonth.setDate(startMonth.getDate() - 29);
+  startMonth.setHours(0, 0, 0, 0);
+
   // Fetch a 30-day window to serve both Week and Month data in a single response.
   const workouts = await prisma.workout.findMany({
     where: {
