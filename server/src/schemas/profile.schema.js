@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// === POST / and PUT / ===
 export const upsertProfileBody = z.object({
   name: z.string().min(1).max(100).optional(),
   goal: z.string().max(100).optional(),
@@ -10,7 +9,6 @@ export const upsertProfileBody = z.object({
   imageUrl: z.string().optional(),
 }).passthrough();
 
-// === GET /duration-stats ===
 export const durationStatsQuery = z.object({
   range: z.coerce.number().int().min(1).max(365).optional(),
 });

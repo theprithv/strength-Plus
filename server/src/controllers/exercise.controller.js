@@ -29,10 +29,8 @@ export const getExercises = async (req, res) => {
       });
     }
 
-    // 1. Get Total Count
     const totalCount = await prisma.exercise.count({ where });
 
-    // 2. Get Exercises
     const exercises = await prisma.exercise.findMany({
       where,
       orderBy: { name: "asc" },
@@ -47,6 +45,7 @@ export const getExercises = async (req, res) => {
         isCustom: true,
         createdByUserId: true,
         secondaryMuscles: true,
+        howToSteps: true,
       },
     });
 
@@ -203,14 +202,11 @@ export const deleteExercise = async (req, res) => {
 };
 
 
-// ===== GET EXERCISE STATS (CORRECTED) =====
 export const getExerciseStats = async (req, res) => {
   try {
     const userId = req.user.id;
-    // ❌ REMOVED parseInt() because your IDs are UUID strings
-    const exerciseId = req.params.id; 
+    const exerciseId = req.params.id;
 
-    // 1. Get Last Performed Date
     const lastWorkout = await prisma.workout.findFirst({
       where: {
         userId: userId,
@@ -222,7 +218,6 @@ export const getExerciseStats = async (req, res) => {
       select: { date: true },
     });
 
-    // 2. Get Best Lift (Heaviest Set)
     const bestSet = await prisma.setLog.findFirst({
       where: {
         workoutExercise: {
@@ -249,47 +244,56 @@ export const getExerciseHistory = async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: exerciseId } = req.params;
-    const globalBest = await prisma.setLog.findFirst({
-      where: {
-        workoutExercise: {
-          exerciseId: exerciseId,
-          workout: { userId: userId },
-        },
-      },
-      orderBy: { weight: "desc" },
-      select: { weight: true },
-    });
 
-    const allTimeMax = globalBest ? globalBest.weight : 0;
     const historyLogs = await prisma.workoutExercise.findMany({
       where: {
         exerciseId: exerciseId,
         workout: { userId: userId, isCompleted: true },
       },
       orderBy: {
-        workout: { date: "desc" },
+        workout: { date: "desc" }, // newest first
       },
-      take: 31, 
+      take: 31,
       include: {
         workout: { select: { date: true } },
         sets: {
-          orderBy: { weight: "desc" }, 
+          orderBy: { weight: "desc" },
         },
       },
     });
 
+    // Epley 1RM for each session: weight × (1 + reps/30)
+    const allEst1RMs = historyLogs.map(log =>
+      log.sets.length > 0
+        ? log.sets[0].weight * (1 + log.sets[0].reps / 30)
+        : 0
+    );
+
+    const globalBest1RM = allEst1RMs.length > 0 ? Math.max(...allEst1RMs) : 0;
+
+    // Walk oldest → newest to find the first session that achieved the peak 1RM.
+    // That session is the true PR — only one badge ever shown.
+    let prSessionIndex = -1;
+    if (globalBest1RM > 0) {
+      for (let i = historyLogs.length - 1; i >= 0; i--) {
+        if (Math.abs(allEst1RMs[i] - globalBest1RM) < 0.001) {
+          prSessionIndex = i;
+          break;
+        }
+      }
+    }
+
+    // --- Format History ---
     const formattedHistory = historyLogs.slice(0, 30).map((log, index) => {
       if (!log.sets || log.sets.length === 0) return null;
-      const bestSet = log.sets[0]; 
+
+      const bestSet = log.sets[0];
       const totalSets = log.sets.length;
 
       let diff = "0kg";
       const previousSession = historyLogs[index + 1];
-
       if (previousSession && previousSession.sets.length > 0) {
-        const prevBest = previousSession.sets[0].weight;
-        const difference = bestSet.weight - prevBest;
-
+        const difference = bestSet.weight - previousSession.sets[0].weight;
         if (difference > 0) diff = `+${difference}kg`;
         else if (difference < 0) diff = `${difference}kg`;
       } else if (index === historyLogs.length - 1) {
@@ -301,8 +305,8 @@ export const getExerciseHistory = async (req, res) => {
         weight: bestSet.weight,
         reps: bestSet.reps,
         sets: totalSets,
-        diff: diff,
-        isPr: bestSet.weight >= allTimeMax && bestSet.weight > 0,
+        diff,
+        isPr: index === prSessionIndex,
       };
     }).filter(item => item !== null);
 

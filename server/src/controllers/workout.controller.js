@@ -10,7 +10,7 @@ export const startWorkout = async (req, res) => {
       return res.status(400).json({ error: "splitName is required" });
     }
 
-    // 0️⃣ Safety Check: If active workout exists, return it instead of creating new
+    // Return existing session rather than creating a duplicate
     const existing = await prisma.workout.findFirst({
       where: { userId, isCompleted: false },
       include: {
@@ -25,7 +25,6 @@ export const startWorkout = async (req, res) => {
        return res.status(200).json(existing);
     }
 
-    // 1️⃣ Create the workout session
     const workout = await prisma.workout.create({
       data: {
         userId,
@@ -33,7 +32,6 @@ export const startWorkout = async (req, res) => {
       },
     });
 
-    // 2️⃣ Load ⭐ current routine (if exists)
     const currentRoutine = await prisma.routine.findFirst({
       where: { userId, isCurrent: true },
       include: {
@@ -44,7 +42,6 @@ export const startWorkout = async (req, res) => {
       },
     });
 
-    // 3️⃣ If routine exists → copy its structure into workout
     if (currentRoutine) {
       const daySpecificExercises = currentRoutine.exercises.filter(
         (ex) => ex.day === currentRoutine.currentDay
@@ -88,7 +85,6 @@ export const addExerciseToWorkout = async (req, res) => {
     const { workoutId } = req.params;
     const { exerciseId, order } = req.body;
 
-    // 0️⃣ Check for duplicates
     const existing = await prisma.workoutExercise.findFirst({
       where: { workoutId, exerciseId },
     });
@@ -165,7 +161,7 @@ export const finishWorkout = async (req, res) => {
       where: { id: workoutId },
       include: {
         exercises: {
-          select: { id: true }, // Optimized selection
+          select: { id: true },
         },
       },
     });
@@ -178,11 +174,9 @@ export const finishWorkout = async (req, res) => {
       return res.status(400).json({ error: "Workout already completed" });
     }
 
-    // 🧹 BATCH CLEANUP: 1. Delete all empty sets across the entire workout
     const workoutExerciseIds = workout.exercises.map((ex) => ex.id);
 
     if (workoutExerciseIds.length > 0) {
-      // 1. Delete empty sets
       await prisma.setLog.deleteMany({
         where: {
           workoutExerciseId: { in: workoutExerciseIds },
@@ -190,7 +184,6 @@ export const finishWorkout = async (req, res) => {
         },
       });
 
-      // 2. Find exercises that still have sets
       const exercisesWithSets = await prisma.setLog.groupBy({
         by: ["workoutExerciseId"],
         where: {
@@ -201,7 +194,6 @@ export const finishWorkout = async (req, res) => {
       const validIds = new Set(exercisesWithSets.map((e) => e.workoutExerciseId));
       const idsToDelete = workoutExerciseIds.filter((id) => !validIds.has(id));
 
-      // 3. Delete exercises that have NO sets remaining
       if (idsToDelete.length > 0) {
         await prisma.workoutExercise.deleteMany({
           where: { id: { in: idsToDelete } },
@@ -209,7 +201,6 @@ export const finishWorkout = async (req, res) => {
       }
     }
 
-    // 🔄 RE-FETCH CLEAN DATA
     const cleanedWorkout = await prisma.workout.findUnique({
       where: { id: workoutId },
       include: {
@@ -219,7 +210,6 @@ export const finishWorkout = async (req, res) => {
       },
     });
 
-    // 🛑 VALIDATION: Check if session is empty
     const hasValidSets =
       cleanedWorkout.exercises.length > 0 &&
       cleanedWorkout.exercises.some((ex) => ex.sets.length > 0);
@@ -277,7 +267,6 @@ export const finishWorkout = async (req, res) => {
 
 export const getActiveWorkout = async (req, res) => {
   try {
-    // 🔍 Find ALL active workouts
     const activeWorkouts = await prisma.workout.findMany({
       where: {
         userId: req.user.id,
@@ -300,10 +289,9 @@ export const getActiveWorkout = async (req, res) => {
       return res.json(null);
     }
 
-    // ✅ Keep the newest one
     const currentCallback = activeWorkouts[0];
 
-    // 🧹 Auto-close any *older* ghost sessions (Self-Healing)
+    // Auto-close older ghost sessions to prevent duplicate state
     if (activeWorkouts.length > 1) {
       const idsToClose = activeWorkouts.slice(1).map((w) => w.id);
       await prisma.workout.updateMany({
@@ -388,12 +376,10 @@ export const removeExerciseFromWorkout = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    // 1. Delete associated sets
     await prisma.setLog.deleteMany({
       where: { workoutExerciseId: id },
     });
 
-    // 2. Delete the exercise entry
     await prisma.workoutExercise.delete({
       where: { id },
     });

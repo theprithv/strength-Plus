@@ -1,11 +1,9 @@
 import { z } from "zod";
 
-// === POST /start ===
 export const startWorkoutBody = z.object({
   splitName: z.string().min(1, "splitName is required"),
 });
 
-// === POST /:workoutId/exercises ===
 export const addExerciseParams = z.object({
   workoutId: z.string().min(1, "workoutId is required"),
 });
@@ -14,7 +12,6 @@ export const addExerciseBody = z.object({
   order: z.number().int().optional(),
 });
 
-// === POST /exercises/:workoutExerciseId/sets ===
 export const addSetParams = z.object({
   workoutExerciseId: z.string().min(1, "workoutExerciseId is required"),
 });
@@ -23,12 +20,10 @@ export const addSetBody = z.object({
   weight: z.coerce.number().min(0, "weight must be >= 0"),
 });
 
-// === POST /:workoutId/finish ===
 export const finishWorkoutParams = z.object({
   workoutId: z.string().min(1, "workoutId is required"),
 });
 
-// === DELETE /exercises/:id, PATCH /exercises/:id ===
 export const exerciseIdParams = z.object({
   id: z.string().min(1, "ID is required"),
 });
@@ -36,7 +31,6 @@ export const updateWorkoutExerciseBody = z.object({
   exerciseId: z.string().min(1, "exerciseId is required"),
 });
 
-// === PATCH /sets/:setId, DELETE /sets/:setId ===
 export const setIdParams = z.object({
   setId: z.string().min(1, "setId is required"),
 });
@@ -45,7 +39,6 @@ export const updateSetBody = z.object({
   weight: z.coerce.number().min(0, "weight must be >= 0"),
 });
 
-// === GET /by-date/:date ===
 export const dateParams = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD format"),
 });

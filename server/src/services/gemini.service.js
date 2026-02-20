@@ -4,9 +4,9 @@ import logger from "../config/logger.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const FALLBACK_INSIGHTS = [
-  "Training analysis is temporarily unavailable today.",
-  "Your workout data is being collected for the next update.",
-  "Insights will refresh automatically tomorrow.",
+  "Progressive overload is the key to strength gains — add small weight or reps each week to keep your muscles adapting.",
+  "Recovery is where growth happens. Aim for 7–9 hours of sleep and at least one full rest day between heavy sessions.",
+  "Compound lifts like squats, deadlifts, and bench press recruit the most muscle fibers — prioritize them for maximum strength gains.",
 ];
 
 /**
@@ -16,7 +16,6 @@ const FALLBACK_INSIGHTS = [
 export async function getOrGenerateInsights(userId, forceRegen = false) {
   const today = new Date().toISOString().slice(0, 10);
 
-  // 1. Check persisted daily insights (restart-safe)
   const existing = await prisma.userDailyInsight.findFirst({
     where: { userId, date: today },
   });
@@ -25,7 +24,6 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
     return { status: "ready", insights: existing.insights };
   }
 
-  // 2. Gather workout data
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -80,12 +78,11 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
     muscles: Object.keys(muscles).length > 0 ? muscles : "No training data found for this period.",
   };
 
-  // 3. Gemini call
   let insights = [];
   try {
     const genAI = new GoogleGenerativeAI(config.geminiApiKey);
     const model = genAI.getGenerativeModel({
-      model: "models/gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
     });
 
     const prompt = `
@@ -116,17 +113,21 @@ ${JSON.stringify(payload, null, 2)}
       .filter((b) => b.length > 20)
       .slice(0, 3);
 
-    // Validate insights
     if (insights.length < 3) {
       logger.warn(`Gemini returned only ${insights.length} valid insights. Using fallback.`);
       insights = FALLBACK_INSIGHTS;
     }
   } catch (err) {
-    logger.error(`Gemini Insights Error: ${err.message}`);
+    if (err.status === 429) {
+      logger.warn("Gemini quota exceeded — check API key quota at https://ai.dev/rate-limit");
+    } else if (err.status === 404) {
+      logger.warn("Gemini model not found — verify model name in gemini.service.js");
+    } else {
+      logger.error(`Gemini error: ${err.message}`);
+    }
     insights = FALLBACK_INSIGHTS;
   }
 
-  // 4. Persist insights (restart-safe)
   try {
     const existingEntry = await prisma.userDailyInsight.findFirst({
       where: { userId, date: today },

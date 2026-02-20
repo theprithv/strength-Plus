@@ -18,6 +18,9 @@ const router = express.Router();
 
 router.post("/", protect, validate({ body: createRoutineBody }), routineController.createRoutine);
 router.get("/", protect, routineController.getRoutines);
+// Must precede /:id routes to avoid "current" matching as a param
+router.get("/current", protect, routineController.getCurrentRoutine);
+
 router.patch("/:id", protect, validate({ params: updateRoutineParams, body: updateRoutineBody }), routineController.updateRoutine);
 
 router.patch("/:id/set-current", protect, validate({ params: routineIdParams }), routineController.setCurrentRoutine);
@@ -30,7 +33,5 @@ router.patch("/:id/reorder", protect, validate({ params: routineIdParams, body: 
 router.get("/:id/exercises", protect, validate({ params: routineIdParams, query: routineExercisesQuery }), routineController.getRoutineExercises);
 router.delete("/exercises/:id", protect, validate({ params: routineIdParams }), routineController.removeRoutineExercise);
 router.delete("/:routineId/exercises/by-exercise/:exerciseId", protect, validate({ params: removeByExerciseParams }), routineController.removeExerciseFromRoutineByExerciseId);
-
-router.get("/current", protect, routineController.getCurrentRoutine);
 
 export default router;

@@ -197,13 +197,11 @@ export async function removeExerciseFromRoutineByExerciseId(req, res) {
 
     if (existingExercises.length > 0) {
       const ids = existingExercises.map(e => e.id);
-      
-      // 1. Delete sets
+
       await prisma.routineSet.deleteMany({
         where: { routineExerciseId: { in: ids } }
       });
 
-      // 2. Delete routine exercises
       await prisma.routineExercise.deleteMany({
         where: { id: { in: ids } }
       });

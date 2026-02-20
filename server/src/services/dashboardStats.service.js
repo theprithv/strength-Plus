@@ -174,13 +174,7 @@ function getISOWeek(date) {
 }
 
 export async function getMuscleBalance(userId, range = "week") {
-  // We fetch a 30-day window so we can provide both Week and Month data in one response for the tooltip
-  const { start: startWeek, end } = getDateRange("week");
-  const { start: startMonth } = getDateRange("month");
-
-  // Fetch only necessary data:
-  // - Filter workouts by date range
-  // - Select only exercise names, muscle groups, and SET COUNTS (not full set objects)
+  // Fetch a 30-day window to serve both Week and Month data in a single response.
   const workouts = await prisma.workout.findMany({
     where: {
       userId,
@@ -216,27 +210,23 @@ export async function getMuscleBalance(userId, range = "week") {
     balance[m] = {
       weekSets: 0,
       monthSets: 0,
-      exercises: {}, // Format: { "Bench Press": 10, ... }
+      exercises: {},
     };
   });
 
   for (const w of workouts) {
     const workoutTime = new Date(w.startTime ?? w.createdAt);
     const inWeek = workoutTime >= startWeek;
-    
-    // Since we filtered by startMonth in the query, we know it's in the month window
-    // but explicit check is fine for safety if logic changes
     const inMonth = workoutTime >= startMonth;
 
     for (const ex of w.exercises) {
       const primary = ex.exercise.primaryMuscle.toLowerCase().trim();
       const secondaries = ex.exercise.secondaryMuscles.map((m) => m.toLowerCase().trim());
       const exerciseName = ex.exercise.name;
-      const setCount = ex._count.sets; // Direct count from DB
+      const setCount = ex._count.sets;
 
       if (setCount === 0) continue;
 
-      // Add to primary muscle balance
       if (balance[primary]) {
         if (inWeek) balance[primary].weekSets += setCount;
         if (inMonth) balance[primary].monthSets += setCount;
@@ -244,7 +234,6 @@ export async function getMuscleBalance(userId, range = "week") {
           (balance[primary].exercises[exerciseName] || 0) + setCount;
       }
 
-      // Add to secondary muscle balance
       for (const sec of secondaries) {
         if (balance[sec] && sec !== primary) {
           if (inWeek) balance[sec].weekSets += setCount;
@@ -260,7 +249,6 @@ export async function getMuscleBalance(userId, range = "week") {
 }
 
 export async function getDashboardStats(userId) {
-  // 1. Get Total Workouts (Count only)
   const totalWorkouts = await prisma.workout.count({
     where: {
       userId,
@@ -268,14 +256,9 @@ export async function getDashboardStats(userId) {
     },
   });
 
-  // 2. Get Total Sets & Reps (Database Aggregation)
   const stats = await prisma.setLog.aggregate({
-    _count: {
-      id: true, // Total Sets
-    },
-    _sum: {
-      reps: true, // Total Reps
-    },
+    _count: { id: true },
+    _sum: { reps: true },
     where: {
       workoutExercise: {
         workout: {

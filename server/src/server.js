@@ -17,13 +17,11 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import geminiRoutes from "./routes/gemini.routes.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
-
-
 const app = express();
 
-// --- Production Middleware ---
-app.use(helmet()); // Security headers
-app.use(compression()); // Payload compression
+// Security & compression middleware
+app.use(helmet());
+app.use(compression());
 
 // Configure CORS for production
 const corsOptions = {
@@ -35,11 +33,11 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
-// --- Logging ---
+// HTTP request logging
 app.use(httpLogger.successHandler);
 app.use(httpLogger.errorHandler);
 
-// --- Routes ---
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/profile", profileRoutes);
@@ -54,7 +52,7 @@ app.get("/", (req, res) => {
   res.send("Strength+ API running");
 });
 
-// --- Global Error Handling ---
+// Global error handler
 app.use(errorHandler);
 
 const PORT = config.port;

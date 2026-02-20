@@ -38,7 +38,6 @@ export async function deleteRoutine(userId, routineId) {
     throw new Error("Routine not found");
   }
 
-  // 1️⃣ Delete sets
   await prisma.routineSet.deleteMany({
     where: {
       routineExercise: {
@@ -47,12 +46,10 @@ export async function deleteRoutine(userId, routineId) {
     }
   });
 
-  // 2️⃣ Delete routine exercises
   await prisma.routineExercise.deleteMany({
     where: { routineId }
   });
 
-  // 3️⃣ Delete routine
   return prisma.routine.delete({
     where: { id: routineId }
   });
