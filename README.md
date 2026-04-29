@@ -1,5 +1,5 @@
 
-# ⚡ StrengthPlus | Premium Fitness Tracker
+# ⚡StrengthPlus | Premium Fitness Tracker
 
 Strength+ is a state-of-the-art web application designed for athletes who demand precision, speed, and a premium aesthetic in their training. Built with a "dark-mode first" philosophy, it combines a SaaS-inspired interface with a robust backend to provide seamless workout logging and routine management.
 

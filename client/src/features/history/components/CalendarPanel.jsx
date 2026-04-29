@@ -7,12 +7,15 @@ const CalendarPanel = ({ selectedDate, setSelectedDate, workouts = [] }) => {
 
   const hasWorkoutOnDate = (date) => {
     return workouts.some((w) => {
-      const workoutDate = new Date(w.startTime);
+      // Prefer the explicit `date` field; fall back to startTime
+      const raw = w.date ?? w.startTime;
+      // Parse as UTC date string to avoid timezone shifting
+      const workoutDate = new Date(raw);
 
       return (
-        workoutDate.getDate() === date.getDate() &&
-        workoutDate.getMonth() === date.getMonth() &&
-        workoutDate.getFullYear() === date.getFullYear()
+        workoutDate.getUTCDate() === date.getDate() &&
+        workoutDate.getUTCMonth() === date.getMonth() &&
+        workoutDate.getUTCFullYear() === date.getFullYear()
       );
     });
   };

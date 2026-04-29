@@ -485,6 +485,7 @@ export const getAllWorkouts = async (req, res) => {
         isCompleted: true,
       },
       select: {
+        date: true,
         startTime: true,
       },
     });
