@@ -1,8 +1,8 @@
 /**
  * backfillDemoAccount.js
  *
- * Populates the demo account (theprithv.2004@gmail.com) with 2 months of
- * realistic, progressively-loaded PPL workout history up to today.
+ * Populates the demo account (theprithv.2004@gmail.com) with realistic,
+ * progressively-loaded PPL workout history from Feb 19, 2026 up to today.
  *
  * Usage:
  *   node --env-file=.env scripts/backfillDemoAccount.js
@@ -17,13 +17,11 @@ const prisma = new PrismaClient();
 // ─────────────────────────────────────────────
 const DEMO_EMAIL = "theprithv.2004@gmail.com";
 
-// Start ~2 months before today
-const today = new Date();
-const START_DATE = new Date(today);
-START_DATE.setMonth(START_DATE.getMonth() - 2);
-START_DATE.setHours(0, 0, 0, 0);
+// Fixed start date: February 19, 2026
+const START_DATE = new Date("2026-02-19T00:00:00.000Z");
 
 // End today
+const today = new Date();
 const END_DATE = new Date(today);
 END_DATE.setHours(23, 59, 59, 999);
 
@@ -233,11 +231,16 @@ async function runBackfill() {
     const duration  = isDeloadWeek ? randomInt(40, 55) : randomInt(65, 95);
     const endTime   = new Date(startTime.getTime() + duration * 60_000);
 
+    // Calendar date = midnight UTC of this cursor day (what calendar service filters on)
+    const calendarDate = new Date(
+      Date.UTC(cursor.getFullYear(), cursor.getMonth(), cursor.getDate())
+    );
+
     // Create Workout record
     const workout = await prisma.workout.create({
       data: {
         userId:      user.id,
-        date:        startTime,
+        date:        calendarDate,
         startTime:   startTime,
         endTime:     endTime,
         duration:    duration,
@@ -343,7 +346,7 @@ async function runBackfill() {
         squatMax:    squat    ? Math.round(weightTracker[squat.id]    * 2) / 2 : undefined,
         deadliftMax: deadlift ? Math.round(weightTracker[deadlift.id] * 2) / 2 : undefined,
         bio:
-          "Consistent strength training for 2 months. Following a PPL split with progressive overload. Focused on building a solid foundation.",
+          "Consistent strength training since February 2026. Following a PPL split with progressive overload. ~10 weeks in and already seeing solid progress. Focused on building a strong, aesthetic physique.",
         goal: "Build Muscle & Strength",
       },
     });
