@@ -4,7 +4,7 @@ import logger from "../config/logger.js";
 export const validateRegister = [
   body("email")
     .isEmail().withMessage("Invalid email format")
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
   body("password")
     .isLength({ min: 8 }).withMessage("Password must be at least 8 characters long")
     .matches(/[a-z]/).withMessage("Password must contain at least one lowercase letter")
@@ -26,7 +26,7 @@ export const validateRegister = [
 ];
 
 export const validateLogin = [
-  body("email").isEmail().withMessage("Invalid email format").normalizeEmail(),
+  body("email").isEmail().withMessage("Invalid email format").normalizeEmail({ gmail_remove_dots: false }),
   body("password").notEmpty().withMessage("Password is required"),
   (req, res, next) => {
     const errors = validationResult(req);
