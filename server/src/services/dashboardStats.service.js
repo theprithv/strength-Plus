@@ -10,12 +10,14 @@ export async function getMuscleStats(userId, muscle, range = "week") {
       userId,
       isCompleted: true,
       OR: [
+        { date: { gte: start, lte: end } },
         { startTime: { gte: start, lte: end } },
         { startTime: null, createdAt: { gte: start, lte: end } },
       ],
     },
     select: {
       id: true,
+      date: true,
       startTime: true,
       createdAt: true,
       exercises: {
@@ -63,7 +65,7 @@ export async function getMuscleStats(userId, muscle, range = "week") {
 
     if (workoutVolume > 0) {
       sessions++;
-      const workoutTime = workout.startTime || workout.createdAt;
+      const workoutTime = workout.date ?? workout.startTime ?? workout.createdAt;
       if (!lastTrained || workoutTime > lastTrained) {
         lastTrained = workoutTime;
       }
@@ -91,11 +93,13 @@ export async function getTrainingLoad(userId, range = "week") {
       userId,
       isCompleted: true,
       OR: [
+        { date: { gte: start, lte: end } },
         { startTime: { gte: start, lte: end } },
         { startTime: null, createdAt: { gte: start, lte: end } },
       ],
     },
     select: {
+      date: true,
       startTime: true,
       createdAt: true,
       exercises: {
@@ -115,7 +119,7 @@ export async function getTrainingLoad(userId, range = "week") {
   const buckets = {};
 
   for (const workout of workouts) {
-    const date = new Date(workout.startTime ?? workout.createdAt);
+    const date = new Date(workout.date ?? workout.startTime ?? workout.createdAt);
 
     let key;
     if (range === "week") {
@@ -191,11 +195,13 @@ export async function getMuscleBalance(userId, range = "week") {
       userId,
       isCompleted: true,
       OR: [
+        { date: { gte: startMonth, lte: end } },
         { startTime: { gte: startMonth, lte: end } },
         { startTime: null, createdAt: { gte: startMonth, lte: end } },
       ],
     },
     select: {
+      date: true,
       startTime: true,
       createdAt: true,
       exercises: {
@@ -226,7 +232,7 @@ export async function getMuscleBalance(userId, range = "week") {
   });
 
   for (const w of workouts) {
-    const workoutTime = new Date(w.startTime ?? w.createdAt);
+    const workoutTime = new Date(w.date ?? w.startTime ?? w.createdAt);
     const inWeek = workoutTime >= startWeek;
     const inMonth = workoutTime >= startMonth;
 

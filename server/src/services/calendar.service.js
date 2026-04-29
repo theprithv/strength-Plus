@@ -14,11 +14,13 @@ export async function getCalendarData(userId, month) {
       userId,
       isCompleted: true,
       OR: [
+        { date: { gte: start, lte: end } },
         { startTime: { gte: start, lte: end } },
         { startTime: null, createdAt: { gte: start, lte: end } },
       ],
     },
     select: {
+      date: true,
       startTime: true,
       createdAt: true,
     },
@@ -27,8 +29,9 @@ export async function getCalendarData(userId, month) {
   const dayMap = new Map();
 
   for (const workout of workouts) {
-    const date = workout.startTime ?? workout.createdAt;
-    const dateKey = date.toISOString().slice(0, 10);
+    // Prefer the explicit `date` field, fall back to startTime or createdAt
+    const ts = workout.date ?? workout.startTime ?? workout.createdAt;
+    const dateKey = ts.toISOString().slice(0, 10);
     dayMap.set(dateKey, (dayMap.get(dateKey) || 0) + 1);
   }
 

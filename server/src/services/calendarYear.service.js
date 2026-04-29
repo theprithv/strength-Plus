@@ -1,9 +1,6 @@
 import prisma from "../config/prisma.js";
 import { calculateStreaks } from "../utils/streakUtils.js";
 
-/**
- * Get all available years that have at least one completed workout
- */
 async function getAvailableYears(userId) {
   const workouts = await prisma.workout.findMany({
     where: {
@@ -11,6 +8,7 @@ async function getAvailableYears(userId) {
       isCompleted: true,
     },
     select: {
+      date: true,
       startTime: true,
       createdAt: true,
     },
@@ -19,17 +17,13 @@ async function getAvailableYears(userId) {
   const years = new Set();
 
   workouts.forEach((w) => {
-    const date = w.startTime ?? w.createdAt;
-    years.add(date.getFullYear());
+    const ts = w.date ?? w.startTime ?? w.createdAt;
+    years.add(ts.getFullYear());
   });
 
   return Array.from(years).sort((a, b) => a - b);
 }
 
-/**
- * Get trained days for a specific year
- * Returns array of YYYY-MM-DD strings
- */
 async function getTrainedDaysForYear(userId, year) {
   const start = new Date(year, 0, 1, 0, 0, 0, 0);
   const end = new Date(year, 11, 31, 23, 59, 59, 999);
@@ -39,11 +33,13 @@ async function getTrainedDaysForYear(userId, year) {
       userId,
       isCompleted: true,
       OR: [
+        { date: { gte: start, lte: end } },
         { startTime: { gte: start, lte: end } },
         { startTime: null, createdAt: { gte: start, lte: end } },
       ],
     },
     select: {
+      date: true,
       startTime: true,
       createdAt: true,
     },
@@ -52,16 +48,13 @@ async function getTrainedDaysForYear(userId, year) {
   const daySet = new Set();
 
   workouts.forEach((w) => {
-    const date = w.startTime ?? w.createdAt;
-    daySet.add(date.toISOString().slice(0, 10));
+    const ts = w.date ?? w.startTime ?? w.createdAt;
+    daySet.add(ts.toISOString().slice(0, 10));
   });
 
   return Array.from(daySet).sort();
 }
 
-/**
- * Get current streak (global, up to today)
- */
 async function getCurrentStreak(userId) {
   const workouts = await prisma.workout.findMany({
     where: {
@@ -69,28 +62,25 @@ async function getCurrentStreak(userId) {
       isCompleted: true,
     },
     select: {
+      date: true,
       startTime: true,
       createdAt: true,
     },
     orderBy: {
-      createdAt: "asc",
+      date: "asc",
     },
   });
 
   const calendarData = workouts
     .map((w) => {
-      const date = w.startTime ?? w.createdAt;
-      return { date: date.toISOString().slice(0, 10) };
+      const ts = w.date ?? w.startTime ?? w.createdAt;
+      return { date: ts.toISOString().slice(0, 10) };
     })
     .sort((a, b) => a.date.localeCompare(b.date));
-
-  // Pass current server time to validate if streak is still active
   const { currentStreak } = calculateStreaks(calendarData, new Date());
   return currentStreak;
 }
-/**
- * Get longest streak within a given year
- */
+
 function getLongestStreakForYear(trainedDays) {
   const calendarData = trainedDays.map((date) => ({
     date,
@@ -101,9 +91,6 @@ function getLongestStreakForYear(trainedDays) {
   return longestStreak;
 }
 
-/**
- * MAIN SERVICE FUNCTION
- */
 export async function getYearCalendarData(userId, year) {
   const availableYears = await getAvailableYears(userId);
 

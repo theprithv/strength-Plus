@@ -321,20 +321,17 @@ export const getWorkoutsByDate = async (req, res) => {
     const userId = req.user.id;
     const { date } = req.params;
 
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = new Date(date + "T00:00:00.000Z");
+    const endOfDay = new Date(date + "T23:59:59.999Z");
 
     const workouts = await prisma.workout.findMany({
       where: {
         userId,
         isCompleted: true,
-        startTime: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
+        OR: [
+          { date: { gte: startOfDay, lte: endOfDay } },
+          { startTime: { gte: startOfDay, lte: endOfDay } },
+        ],
       },
       include: {
         exercises: {
@@ -348,7 +345,7 @@ export const getWorkoutsByDate = async (req, res) => {
         },
       },
       orderBy: {
-        startTime: "asc",
+        date: "asc",
       },
     });
 
