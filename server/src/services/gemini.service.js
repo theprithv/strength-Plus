@@ -82,6 +82,7 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
 
   let insights = [];
   try {
+    logger.info(`[AI] Payload for user ${userId}: ${JSON.stringify(payload)}`);
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
