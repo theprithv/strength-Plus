@@ -16,7 +16,8 @@ export default function GeminiInsightsPanel() {
   const { user } = useContext(AuthContext);
 
   const [insights, setInsights] = useState([]);
-  const [status, setStatus] = useState("analyzing");
+  // status: "loading" | "ready" | "error"
+  const [status, setStatus] = useState("loading");
 
   const [index, setIndex] = useState(0);
   const [text, setText] = useState("");
@@ -27,34 +28,46 @@ export default function GeminiInsightsPanel() {
   const greeting = getGreeting();
   const name = user?.name || "Athlete";
 
-  /* fetch once with cache */
+  /* fetch once with daily cache */
   useEffect(() => {
     if (!user?.id) return;
-    
-    // Create a daily cache key so insights refresh daily
+
     const today = new Date().toDateString();
-    const cacheKey = `gemini_insights_v2_${user.id}_${today}`;
+    const cacheKey = `ai_insights_v3_${user.id}_${today}`;
     const cached = sessionStorage.getItem(cacheKey);
 
     if (cached) {
-      const data = JSON.parse(cached);
-      setInsights(data.insights || []);
-      setStatus(data.status || "analyzing");
-      return;
+      try {
+        const data = JSON.parse(cached);
+        // Only use cache if it has real content (≥3 insights)
+        if (Array.isArray(data.insights) && data.insights.length >= 3) {
+          setInsights(data.insights);
+          setStatus("ready");
+          return;
+        }
+      } catch (_) {
+        // Bad JSON — fall through and refetch
+      }
+      sessionStorage.removeItem(cacheKey);
     }
 
     getGeminiInsights()
       .then((data) => {
-        setInsights(data.insights || []);
-        setStatus(data.status || "analyzing");
-        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        const list = data.insights || [];
+        if (list.length > 0) {
+          setInsights(list);
+          setStatus("ready");
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        } else {
+          setStatus("error");
+        }
       })
-      .catch(() => setStatus("analyzing"));
+      .catch(() => setStatus("error"));
   }, [user]);
 
   /* main animation brain */
   useEffect(() => {
-    if (!insights.length) return;
+    if (status !== "ready" || !insights.length) return;
 
     const fullText = insights[index];
     let timer;
@@ -63,7 +76,7 @@ export default function GeminiInsightsPanel() {
       case "thinking":
         timer = setTimeout(() => {
           setPhase("typing");
-        }, 3000); // 1s thinking
+        }, 1500);
         break;
 
       case "typing":
@@ -98,36 +111,44 @@ export default function GeminiInsightsPanel() {
     }
 
     return () => clearTimeout(timer);
-  }, [phase, text, index, insights]);
+  }, [phase, text, index, insights, status]);
+
+  const renderInsightArea = () => {
+    if (status === "loading") {
+      return <div className="gemini-placeholder">Analyzing your training data...</div>;
+    }
+    if (status === "error") {
+      return <div className="gemini-placeholder">AI insights unavailable — check back soon.</div>;
+    }
+    // ready
+    return (
+      <div className="gemini-insight">
+        <span className="gemini-text">{text}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="gemini-panel-premium">
       <div className="gemini-content-grid">
-        {/* THE AI ORB: Serves as the visual identity of Gemini */}
+        {/* THE AI ORB */}
         <div className="gemini-avatar-area">
           <div className={`ai-orb ${phase}`}></div>
         </div>
 
         <div className="gemini-text-area">
-          {/* Greeting: Now integrated closer to the insight for flow */}
           <div className="gemini-greeting">
             {greeting}, <span className="gemini-username">{name}</span>
           </div>
 
           {/* Insight area */}
           <div className="gemini-insight-wrapper">
-            {status === "analyzing" || insights.length === 0 ? (
-              <div className="gemini-placeholder">Analyzing biometric data...</div>
-            ) : (
-              <div className="gemini-insight">
-                <span className="gemini-text">{text}</span>
-              </div>
-            )}
+            {renderInsightArea()}
           </div>
         </div>
       </div>
 
-      {/* Optimized keyframes for the "Neural Pulse" effect */}
+      {/* Keyframes for the Neural Pulse effect */}
       <style>
         {`
           @keyframes breathe {
