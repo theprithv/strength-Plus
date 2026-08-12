@@ -33,7 +33,10 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
     },
     include: {
       exercises: {
-        include: { exercise: true },
+        include: {
+          exercise: true,
+          sets: true,
+        },
       },
     },
   });
