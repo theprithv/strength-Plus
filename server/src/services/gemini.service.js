@@ -1,7 +1,6 @@
 import prisma from "../config/prisma.js";
 import config from "../config/env.js";
 import logger from "../config/logger.js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const FALLBACK_INSIGHTS = [
   "Progressive overload is the key to strength gains — add small weight or reps each week to keep your muscles adapting.",
@@ -80,13 +79,20 @@ export async function getOrGenerateInsights(userId, forceRegen = false) {
 
   let insights = [];
   try {
-    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-    });
-
-    const prompt = `
-You are a professional strength training analyst.
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.openRouterApiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": config.clientUrl,
+        "X-Title": "Strength Plus",
+      },
+      body: JSON.stringify({
+        model: "anthropic/claude-sonnet-4-5",
+        messages: [
+          {
+            role: "user",
+            content: `You are a professional strength training analyst.
 
 Analyze the training data below for this month. 
 
@@ -101,30 +107,41 @@ Rules:
 - Do not explain yourself.
 
 DATA:
-${JSON.stringify(payload, null, 2)}
-`;
+${JSON.stringify(payload, null, 2)}`,
+          },
+        ],
+        max_tokens: 512,
+      }),
+    });
 
-    const result = await model.generateContent(prompt);
-    const text = await result.response.text();
-
-    insights = text
-      .split(/<INSIGHT>|\n\n/)
-      .map((b) => b.trim())
-      .filter((b) => b.length > 20)
-      .slice(0, 3);
-
-    if (insights.length < 3) {
-      logger.warn(`Gemini returned only ${insights.length} valid insights. Using fallback.`);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      const status = response.status;
+      if (status === 429) {
+        logger.warn("OpenRouter quota exceeded — check your rate limits at https://openrouter.ai");
+      } else if (status === 404) {
+        logger.warn("OpenRouter model not found — verify model name in gemini.service.js");
+      } else {
+        logger.error(`OpenRouter error ${status}: ${err?.error?.message || response.statusText}`);
+      }
       insights = FALLBACK_INSIGHTS;
+    } else {
+      const data = await response.json();
+      const text = data?.choices?.[0]?.message?.content ?? "";
+
+      insights = text
+        .split(/<INSIGHT>|\n\n/)
+        .map((b) => b.trim())
+        .filter((b) => b.length > 20)
+        .slice(0, 3);
+
+      if (insights.length < 3) {
+        logger.warn(`OpenRouter returned only ${insights.length} valid insights. Using fallback.`);
+        insights = FALLBACK_INSIGHTS;
+      }
     }
   } catch (err) {
-    if (err.status === 429) {
-      logger.warn("Gemini quota exceeded — check API key quota at https://ai.dev/rate-limit");
-    } else if (err.status === 404) {
-      logger.warn("Gemini model not found — verify model name in gemini.service.js");
-    } else {
-      logger.error(`Gemini error: ${err.message}`);
-    }
+    logger.error(`OpenRouter fetch error: ${err.message}`);
     insights = FALLBACK_INSIGHTS;
   }
 

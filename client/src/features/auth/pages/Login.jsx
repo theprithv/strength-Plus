@@ -15,7 +15,7 @@ const Login = () => {
     firstName: "",
     lastName: "",
     email: "",
-    password: "",
+    passwords: "",
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);

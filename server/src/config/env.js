@@ -24,8 +24,8 @@ const config = {
   // Google OAuth
   googleClientId: process.env.GOOGLE_CLIENT_ID,
 
-  // Gemini AI
-  geminiApiKey: process.env.GEMINI_API_KEY,
+  // OpenRouter AI
+  openRouterApiKey: process.env.OPENROUTER_API_KEY,
 
   // Email (SMTP)
   resendApiKey: process.env.RESEND_API_KEY,

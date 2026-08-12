@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // CONFIGURATION
 // ==========================================
 const START_DATE = "2024-01-01";
-const END_DATE = "2026-02-13";
+const END_DATE = new Date().toISOString().split("T")[0]; // Today's date
 const REST_CHANCE = 0.15; // 15% chance to take a rest day randomly
 const MAX_CONSECUTIVE_TRAINING_DAYS = 6;
 
@@ -31,7 +31,8 @@ const normalize = (s) => s?.toLowerCase().replace(/_/g, " ").trim();
 async function runGenerator() {
   console.log("🚀 Starting Refined Professional Athlete Data Generation...");
 
-  const user = await prisma.user.findFirst({
+  const user = await prisma.user.findUnique({
+    where: { email: "theprithv.2004@gmail.com" },
     include: { profile: true }
   });
 
@@ -56,12 +57,73 @@ async function runGenerator() {
     muscleToExercises[muscle].push(ex);
   });
 
-  // 2. CLEAR EXISTING WORKOUT DATA for this user
-  console.log("🧹 Clearing old workout data...");
+  // 2. CLEAR EXISTING WORKOUT & ROUTINE DATA for this user
+  console.log("🧹 Clearing old workout and routine data...");
   await prisma.setLog.deleteMany({ where: { workoutExercise: { workout: { userId: user.id } } } });
   await prisma.workoutExercise.deleteMany({ where: { workout: { userId: user.id } } });
   await prisma.workout.deleteMany({ where: { userId: user.id } });
+  
+  await prisma.routineSet.deleteMany({ where: { routineExercise: { routine: { userId: user.id } } } });
+  await prisma.routineExercise.deleteMany({ where: { routine: { userId: user.id } } });
+  await prisma.routine.deleteMany({ where: { userId: user.id } });
   console.log("✨ Database clean.");
+
+  // 2.5 Generate a beautiful Professional Routine for the UI
+  console.log("📝 Generating Professional PPL Routine...");
+  const routine = await prisma.routine.create({
+    data: {
+      userId: user.id,
+      name: "Professional PPL Split",
+      notes: "High-volume 6-day split designed for advanced hypertrophy and strength progression.",
+      isCurrent: true,
+      currentDay: 1,
+    }
+  });
+
+  const generateRoutineExercises = async (muscles, dayNum) => {
+    let order = 0;
+    for (const m of muscles) {
+      const pool = muscleToExercises[m] || [];
+      if (pool.length > 0) {
+        // Pick best 2 exercises
+        const picked = pool.slice(0, 2);
+        for (const ex of picked) {
+          const re = await prisma.routineExercise.create({
+            data: {
+              routineId: routine.id,
+              exerciseId: ex.id,
+              day: dayNum,
+              order: order++,
+            }
+          });
+          // 4 working sets per exercise
+          for (let s = 1; s <= 4; s++) {
+            await prisma.routineSet.create({
+              data: {
+                routineExerciseId: re.id,
+                targetReps: s === 1 ? 12 : s === 4 ? 6 : 8,
+              }
+            });
+          }
+        }
+      }
+    }
+  };
+
+  // Day 1: Push
+  await generateRoutineExercises(["chest", "shoulders", "triceps"], 1);
+  // Day 2: Pull
+  await generateRoutineExercises(["back", "lats", "biceps", "traps"], 2);
+  // Day 3: Legs
+  await generateRoutineExercises(["quads", "quadriceps", "hamstrings", "glutes", "calves"], 3);
+  // Day 4: Push (Heavy)
+  await generateRoutineExercises(["chest", "shoulders", "triceps"], 4);
+  // Day 5: Pull (Heavy)
+  await generateRoutineExercises(["back", "lats", "biceps", "traps"], 5);
+  // Day 6: Legs (Heavy)
+  await generateRoutineExercises(["quads", "quadriceps", "hamstrings", "glutes", "calves"], 6);
+  // Day 7: Rest (No exercises needed)
+
 
   // 3. Define Training Splits
   const PPL_SPLITS = [
@@ -136,53 +198,31 @@ async function runGenerator() {
         continue;
     }
 
-    // --- CREATE WORKOUT ---
-    const duration = isDeloadWeek ? randomInt(40, 55) : randomInt(70, 100);
-    const workout = await prisma.workout.create({
-      data: {
-        userId: user.id,
-        date: currentDate,
-        startTime: currentDate,
-        endTime: new Date(currentDate.getTime() + duration * 60 * 1000),
-        duration: duration,
-        splitName: `Pro ${split.name} Day`,
-        isCompleted: true,
-      }
-    });
-
     let totalVolume = 0;
     let totalSets = 0;
     let totalReps = 0;
+    
+    const exercisesData = [];
 
     for (let i = 0; i < dailyExercises.length; i++) {
         const ex = dailyExercises[i];
-        const we = await prisma.workoutExercise.create({
-          data: {
-            workoutId: workout.id,
-            exerciseId: ex.id,
-            order: i,
-          }
-        });
+        
+        const setsData = [];
 
         // --- PERFORMANCE FLUCTUATIONS ---
         const roll = Math.random();
         let performanceMultiplier = 1;
 
         if (roll < 0.8) {
-            // IMPROVEMENT (80%)
-            // Increase base weight by a tiny bit for next time
             const gain = (normalize(ex.equipment).includes("barbell")) ? randomFloat(0.1, 0.3) : randomFloat(0.05, 0.15);
             weightProgressTracker[ex.id] += gain;
-            performanceMultiplier = 1.02; // Small boost this session
+            performanceMultiplier = 1.02;
         } else if (roll < 0.9) {
-            // PLATEAU (10%)
             performanceMultiplier = 1.0;
         } else {
-            // REGRESSION / FATIGUE (10%)
             performanceMultiplier = randomFloat(0.9, 0.95);
         }
 
-        // Apply Deload Week modifier
         if (isDeloadWeek) performanceMultiplier *= 0.7;
 
         const setsCount = isDeloadWeek ? 2 : randomInt(3, 4);
@@ -195,31 +235,67 @@ async function runGenerator() {
 
             const reps = isDeloadWeek ? 12 : randomInt(6, 12);
             
-            await prisma.setLog.create({
-              data: {
-                workoutExerciseId: we.id,
-                setNumber: s,
-                reps,
-                weight,
-                volume: reps * weight,
-              }
+            setsData.push({
+              setNumber: s,
+              reps,
+              weight,
+              volume: reps * weight,
             });
 
             totalVolume += (reps * weight);
             totalSets++;
             totalReps += reps;
         }
+        
+        exercisesData.push({
+          exerciseId: ex.id,
+          order: i,
+          sets: { create: setsData }
+        });
     }
+    
+    // Ensure the date field is purely the calendar date at midnight UTC
+    const calendarDate = new Date(Date.UTC(
+      currentDate.getUTCFullYear(),
+      currentDate.getUTCMonth(),
+      currentDate.getUTCDate(),
+      0, 0, 0, 0
+    ));
 
-    // Update aggregate stats
-    await prisma.workout.update({
-      where: { id: workout.id },
-      data: { totalVolume, totalSets, totalReps }
-    });
+    const duration = isDeloadWeek ? randomInt(40, 55) : randomInt(70, 100);
+    
+    let success = false;
+    let retries = 0;
+    while (!success && retries < 3) {
+      try {
+        await prisma.workout.create({
+          data: {
+            userId: user.id,
+            date: calendarDate,
+            startTime: currentDate,
+            endTime: new Date(currentDate.getTime() + duration * 60 * 1000),
+            duration: duration,
+            splitName: `Pro ${split.name} Day`,
+            isCompleted: true,
+            totalVolume,
+            totalSets,
+            totalReps,
+            exercises: { create: exercisesData }
+          }
+        });
+        success = true;
+      } catch (err) {
+        retries++;
+        console.error(`Error saving workout, retrying (${retries}/3)...`, err.message);
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
 
     workoutsGenerated++;
     if (workoutsGenerated % 100 === 0) {
       console.log(`✅ Generated ${workoutsGenerated} sessions...`);
+      // Small delay to let Neon breathe
+      await new Promise(r => setTimeout(r, 500));
     }
 
     currentDate = addDays(currentDate, 1);
